@@ -5,7 +5,7 @@ class Menu:
     def __init__(self, screen):
         self.screen = screen
         # Load the custom font
-        self.font = pygame.font.Font(os.path.join("assets", "fonts", "custom_font.ttf"), 74)
+        self.font = pygame.font.Font(os.path.join("assets", "fonts", "western.ttf"), 74)
         self.options = ["Start Game", "Options", "Quit"]
         self.selected_option = 0
 
@@ -13,17 +13,17 @@ class Menu:
         self.screen_width, self.screen_height = self.screen.get_size()
 
         # Load and scale the background image
-        self.background = pygame.image.load(os.path.join("assets", "images", "background.jpg"))
+        self.background = pygame.image.load(os.path.join("assets", "images", "ecran_titre.jpg"))
         self.background = pygame.transform.scale(self.background, (self.screen_width, self.screen_height))
 
     def display_menu(self):
         self.screen.blit(self.background, (0, 0))
         for i, option in enumerate(self.options):
             if i == self.selected_option:
-                label = self.font.render(option, True, (255, 0, 0))
+                label = self.font.render(option, True, (250, 214, 57))
             else:
                 label = self.font.render(option, True, (255, 255, 255))
-            label_rect = label.get_rect(center=(self.screen_width*0.508, self.screen_height*0.22 + i * 75))
+            label_rect = label.get_rect(center=(self.screen_width*0.508, self.screen_height*0.22 + i * 85))
             self.screen.blit(label, label_rect)
         pygame.display.flip()
 
