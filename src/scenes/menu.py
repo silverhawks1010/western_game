@@ -38,4 +38,17 @@ class Menu:
                     return "start_game"
                 elif self.selected_option == 1:
                     return "quit"
+        elif event.type == pygame.MOUSEMOTION:
+            mouse_x, mouse_y = event.pos
+            for i, option in enumerate(self.options):
+                label = self.font.render(option, True, (255, 255, 255))
+                label_rect = label.get_rect(center=(self.screen_width*0.508, self.screen_height*0.22 + i * 85))
+                if label_rect.collidepoint(mouse_x, mouse_y):
+                    self.selected_option = i
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left mouse button
+                if self.selected_option == 0:
+                    return "start_game"
+                elif self.selected_option == 1:
+                    return "quit"
         return None
