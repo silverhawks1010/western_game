@@ -1,8 +1,39 @@
 import os
 import pygame
 
+class Popup:
+    def __init__(self, screen, message):
+        self.screen = screen
+        self.message = message
+        self.font = pygame.font.Font(None, 36)
+        self.width, self.height = 300, 200
+        self.rect = pygame.Rect((self.screen.get_width() - self.width) // 2, (self.screen.get_height() - self.height) // 2, self.width, self.height)
+        self.bg_color = (50, 50, 50)
+        self.text_color = (255, 255, 255)
+        self.button_rect = pygame.Rect(self.rect.x + 100, self.rect.y + 150, 100, 30)
+        self.button_color = (100, 100, 100)
+        self.button_text = "OK"
+
+    def display(self):
+        pygame.draw.rect(self.screen, self.bg_color, self.rect)
+        text_surface = self.font.render(self.message, True, self.text_color)
+        text_rect = text_surface.get_rect(center=(self.rect.centerx, self.rect.centery - 20))
+        self.screen.blit(text_surface, text_rect)
+        pygame.draw.rect(self.screen, self.button_color, self.button_rect)
+        button_text_surface = self.font.render(self.button_text, True, self.text_color)
+        button_text_rect = button_text_surface.get_rect(center=self.button_rect.center)
+        self.screen.blit(button_text_surface, button_text_rect)
+        pygame.display.flip()
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.button_rect.collidepoint(event.pos):
+                return True
+        return False
+
 class Menu:
     def __init__(self, screen):
+        self.popup = None
         self.screen = screen
         self.options = ["Start Game", "Options", "Quit"]
         self.font = pygame.font.Font(os.path.join("assets", "fonts", "western.ttf"), 74)
@@ -38,9 +69,16 @@ class Menu:
                 label = font.render(option, True, (255, 255, 255))
             label_rect = label.get_rect(center=(self.screen_width*0.508, self.screen_height*0.22 + i * (font_size + 10)))
             self.screen.blit(label, label_rect)
+        if self.popup:
+            self.popup.display()
         pygame.display.flip()
 
     def handle_event(self, event):
+        if self.popup:
+            if self.popup.handle_event(event):
+                self.popup = None
+            return None
+
         if event.type == pygame.MOUSEMOTION:
             mouse_x, mouse_y = event.pos
             hovered = False
@@ -58,6 +96,8 @@ class Menu:
             if event.button == 1:  # Left mouse button
                 if self.selected_option == 0:
                     return "start_game"
+                elif self.selected_option == 1:
+                    self.popup = Popup(self.screen, "Voulez-vous couper le son ?")
                 elif self.selected_option == 2:
                     return "quit"
         return None
