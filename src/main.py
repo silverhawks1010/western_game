@@ -1,6 +1,6 @@
 import pygame
 import sys
-from scene.menu import Menu
+from scenes.menu import Menu
 
 # Initialize Pygame
 pygame.init()
