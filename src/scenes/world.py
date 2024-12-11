@@ -1,12 +1,12 @@
 import os
 import random
-
 import pygame
 import pytmx
 import pyscroll
-from entities.player import Player
-from entities.npc import NPC
-from scenes.combat import Combat
+from src.entities.player import Player
+from src.entities.npc import NPC
+from src.scenes.combat import Combat
+
 
 class Map:
     def __init__(self, screen):
@@ -17,18 +17,16 @@ class Map:
         self.player = None
         self.npcs = pygame.sprite.Group()
         self.show_hitboxes = True
-        self.active_npc = None  # Track the active NPC for dialog
+        self.active_npc = None
         self.explo_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "background_sound_theme_chill.mp3"))
         self.battle_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "Theme_arcade.mp3"))
         self.bg_channel = pygame.mixer.Channel(0)
         self.explo_sound.set_volume(0.08)
         self.battle_sound.set_volume(0.08)
-        self.font = pygame.font.SysFont('Arial', 32)  # Charger la police pour afficher le texte
-        self.clock = pygame.time.Clock()  # Ajouter un horloge pour calculer delta_time
+        self.font = pygame.font.SysFont('Arial', 32)
+        self.clock = pygame.time.Clock()
 
         self.switch_map("western_map")
-
-    # src/scenes/world.py
 
     def switch_map(self, map_name):
         self.tmx_data = pytmx.load_pygame(f"assets/map/{map_name}.tmx")
@@ -41,26 +39,50 @@ class Map:
         self.player = Player(map_center)
         self.group.add(self.player)
 
+        # Create NPCs with position as a tuple
         for _ in range(5):
-            x = random.randint(0, self.map_layer.map_rect.width)
-            y = random.randint(0, self.map_layer.map_rect.height)
-            npc = NPC((x, y), 'assets/images/sprite/npc/CowBoyIdle.png', "Prepare for battle!",
-                      interaction_type='combat')
+            npc_x = random.randint(0, self.map_layer.map_rect.width)
+            npc_y = random.randint(0, self.map_layer.map_rect.height)
+            npc = NPC(
+                position=(npc_x, npc_y),
+                image_path='assets/images/sprite/npc/CowBoyIdle.png',
+                message="Prepare for battle!",
+                interaction_type='combat'
+            )
             self.npcs.add(npc)
             self.group.add(npc)
 
-        # Arrêter la musique actuelle et jouer la nouvelle musique de fond
         self.bg_channel.stop()
         self.bg_channel.play(self.explo_sound, loops=-1)
 
     def update(self):
-        delta_time = self.clock.tick(60) / 1000.0  # Temps écoulé en secondes
-        self.player.update(delta_time)
+        delta_time = self.clock.tick(60) / 1000.0
+
+        # Mise à jour du joueur avec le groupe de NPCs
+        self.player.update(delta_time, self.npcs)
+
+        # Vérifier les collisions balles-NPCs
+        for bullet in self.player.bullets:
+            bullet.update(delta_time)
+            npc_hit = pygame.sprite.spritecollideany(bullet, self.npcs)
+            if npc_hit:
+                print("NPC hit by bullet!")
+                bullet.kill()
+                self.remove_npc(npc_hit)
+                self.player.points += 1  # Ajouter des points quand un NPC est tué
+
         self.npcs.update(delta_time)
         self.handle_interactions()
         self.handle_collisions()
         self.group.update(delta_time)
         self.group.center(self.player.rect.center)
+
+        # Dessiner les balles
+        self.player.bullets.update(delta_time)
+        # Supprimer les balles hors écran
+        for bullet in self.player.bullets:
+            if not self.screen.get_rect().colliderect(bullet.rect):
+                bullet.kill()
 
     def handle_interactions(self):
         keys = pygame.key.get_pressed()
@@ -82,6 +104,7 @@ class Map:
     def remove_npc(self, npc):
         self.npcs.remove(npc)
         self.group.remove(npc)
+        print(f"NPC removed. Remaining NPCs: {len(self.npcs)}")
 
     def start_combat(self, npc):
         print("Combat: " + npc.message)
@@ -107,14 +130,18 @@ class Map:
 
     def draw(self):
         self.group.draw(self.screen)
+
+        # Dessiner les balles
+        self.player.bullets.draw(self.screen)
+
         if self.show_hitboxes:
             for npc in self.npcs:
-                # Code pour dessiner les hitboxes
-                pass
+                pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
+
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
-        # Afficher l'argent du joueur
+        # Afficher l'argent et le score
         money_text = self.font.render(f'Argent: {self.player.money}', True, (255, 255, 255))
         score_text = self.font.render(f'Score: {self.player.points}/5', True, (255, 255, 255))
         self.screen.blit(money_text, (10, 10))

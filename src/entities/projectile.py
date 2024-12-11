@@ -4,36 +4,27 @@ import pygame
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, position, direction, image):
         super().__init__()
-        self.image = image
+        # Redimensionner l'image de la balle
+        scale_factor = 0.5  # Réduire de moitié, ajustez cette valeur selon vos besoins
+        original_size = image.get_size()
+        new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
+        self.image = pygame.transform.scale(image, new_size)
+
         self.rect = self.image.get_rect()
         self.position = pygame.Vector2(position)
         self.direction = direction
-        self.speed = 0.8
-
-        # Position initiale centrée sur le joueur
+        self.speed = 500
         self.rect.center = position
 
-        # Ajustement de la position initiale selon la direction
-        offset = 30  # Distance de départ du centre du joueur
+    def update(self, delta_time=1 / 60):
+        # Le reste du code reste identique
         if self.direction == 'up':
-            self.position.y -= offset
+            self.position.y -= self.speed * delta_time
         elif self.direction == 'down':
-            self.position.y += offset
+            self.position.y += self.speed * delta_time
         elif self.direction == 'left':
-            self.position.x -= offset
+            self.position.x -= self.speed * delta_time
         elif self.direction == 'right':
-            self.position.x += offset
+            self.position.x += self.speed * delta_time
 
-    def update(self):
-        # Déplacement selon la direction
-        if self.direction == 'up':
-            self.position.y -= self.speed
-        elif self.direction == 'down':
-            self.position.y += self.speed
-        elif self.direction == 'left':
-            self.position.x -= self.speed
-        elif self.direction == 'right':
-            self.position.x += self.speed
-
-        # Mise à jour de la position du rectangle
         self.rect.center = self.position

@@ -11,39 +11,74 @@ class Player(pygame.sprite.Sprite):
         self.image = self.idle_images['down'][0]
         self.rect = self.image.get_rect(center=position)
         self.position = pygame.Vector2(position)
-        self.speed = 10  # Default speed in pixels per second
+        self.speed = 10
         self.idle = True
         self.direction = 'down'
         self.idle_index = 0
         self.idle_timer = 0
         self.walk_index = 0
         self.walk_timer = 0
-        self.animation_speed = 0.02  # Default animation speed in seconds per frame
-        self.bullets = pygame.sprite.Group()  # Groupe pour gérer les balles
+        self.animation_speed = 0.02
+        self.bullets = pygame.sprite.Group()
         self.last_shot = 0
-        self.shot_cooldown = 500  # Délai entre les tirs en millisecondes
+        self.shot_cooldown = 1500
 
         self.points = 0
         self.money = 0
 
+        self.bullet_sprites = {
+            'up': None,
+            'down': None,
+            'left': None,
+            'right': None
+        }
+
         try:
             self.bullet_sprites = {
-                'up': pygame.image.load('assets/images/sprite/titleset/balle/balleHAUT.png').convert_alpha(),
-                'down': pygame.image.load('assets/images/sprite/titleset/balle/balleBAS.png').convert_alpha(),
-                'left': pygame.image.load('assets/images/sprite/titleset/balle/balleGAUCHE.png').convert_alpha(),
-                'right': pygame.image.load('assets/images/sprite/titleset/balle/balleDROITE.png').convert_alpha()
+                'up': pygame.image.load('assets/images/map/balle/balleHAUT.png').convert_alpha(),
+                'down': pygame.image.load('assets/images/map/balle/balleBAS.png').convert_alpha(),
+                'left': pygame.image.load('assets/images/map/balle/balleGAUCHE.png').convert_alpha(),
+                'right': pygame.image.load('assets/images/map/balle/balleDROITE.png').convert_alpha()
             }
-            print("Bullet sprites loaded successfully")  # Debug
+            print("Bullet sprites loaded successfully")
         except Exception as e:
-            print(f"Error loading bullet sprites: {e}")  # Debug
+            print(f"Error loading bullet sprites: {e}")
+
+        try:
+            self.shot_sound = pygame.mixer.Sound('assets/sounds/gunshot1.wav')
+            self.shot_sound.set_volume(0.1)  # Réduire le volume à 10% (ajustez entre 0.0 et 1.0)
+            print("Shot sound loaded successfully")
+        except Exception as e:
+            print(f"Error loading shot sound: {e}")
+            self.shot_sound = None
 
     def shoot(self):
         current_time = pygame.time.get_ticks()
         if current_time - self.last_shot > self.shot_cooldown:
-            print("Shooting!")  # Debug
-            self.last_shot = current_time
-            bullet = Bullet(self.rect.center, self.direction, self.bullet_sprites[self.direction])
-            self.bullets.add(bullet)
+            screen = pygame.display.get_surface()
+            screen_center = (screen.get_width() // 2, screen.get_height() // 2)
+
+            if self.bullet_sprites[self.direction]:
+                # Jouer le son de tir s'il est chargé
+                if self.shot_sound:
+                    self.shot_sound.play()
+
+                # Ajuster l'offset selon la direction
+                offset = 30
+                spawn_pos = list(screen_center)
+
+                if self.direction == 'up':
+                    spawn_pos[1] -= offset
+                elif self.direction == 'down':
+                    spawn_pos[1] += offset
+                elif self.direction == 'left':
+                    spawn_pos[0] -= offset
+                elif self.direction == 'right':
+                    spawn_pos[0] += offset
+
+                bullet = Bullet(spawn_pos, self.direction, self.bullet_sprites[self.direction])
+                self.bullets.add(bullet)
+                self.last_shot = current_time
 
     def load_idle_images(self):
         idle_images = {'down': [], 'right': [], 'left': [], 'up': []}
@@ -67,7 +102,7 @@ class Player(pygame.sprite.Sprite):
                 walk_images[direction].append(frame)
         return walk_images
 
-    def update(self, delta_time):
+    def update(self, delta_time, npcs=None):
         keys = pygame.key.get_pressed()
         self.idle = True
 
@@ -101,6 +136,7 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.topleft = self.position  # Update rect position based on the floating-point position
 
+
         if self.idle:
             self.update_idle_animation(delta_time)
         else:
@@ -110,11 +146,20 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_SPACE]:  # Tir avec la barre d'espace
             self.shoot()
 
-        # Mise à jour des balles
-        self.bullets.update()
 
-        # Suppression des balles hors écran
+        # Mise à jour des balles et détection des collisions
         for bullet in self.bullets:
+            bullet.update(delta_time)
+            if npcs:  # Vérification que npcs existe
+                # Vérifier les collisions avec les NPCs
+                for npc in npcs:
+                    if bullet.rect.colliderect(npc.rect):
+                        print("NPC hit!")  # Debug
+                        npc.kill()  # Tuer le NPC
+                        bullet.kill()  # Supprimer la balle
+                        break
+
+            # Supprimer les balles hors écran
             if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
                 bullet.kill()
 
