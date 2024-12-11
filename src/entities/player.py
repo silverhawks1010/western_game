@@ -1,4 +1,5 @@
 import pygame
+from src.entities.projectile import Bullet
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, position):
@@ -18,6 +19,28 @@ class Player(pygame.sprite.Sprite):
         self.walk_index = 0
         self.walk_timer = 0
         self.animation_speed = 60  # Default animation speed
+        self.bullets = pygame.sprite.Group()  # Groupe pour gérer les balles
+        self.last_shot = 0
+        self.shot_cooldown = 500  # Délai entre les tirs en millisecondes
+
+        try:
+            self.bullet_sprites = {
+                'up': pygame.image.load('assets/images/sprite/titleset/balle/balleHAUT.png').convert_alpha(),
+                'down': pygame.image.load('assets/images/sprite/titleset/balle/balleBAS.png').convert_alpha(),
+                'left': pygame.image.load('assets/images/sprite/titleset/balle/balleGAUCHE.png').convert_alpha(),
+                'right': pygame.image.load('assets/images/sprite/titleset/balle/balleDROITE.png').convert_alpha()
+            }
+            print("Bullet sprites loaded successfully")  # Debug
+        except Exception as e:
+            print(f"Error loading bullet sprites: {e}")  # Debug
+
+    def shoot(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_shot > self.shot_cooldown:
+            print("Shooting!")  # Debug
+            self.last_shot = current_time
+            bullet = Bullet(self.rect.center, self.direction, self.bullet_sprites[self.direction])
+            self.bullets.add(bullet)
 
     def load_idle_images(self):
         idle_images = {'down': [], 'right': [], 'left': [], 'up': []}
@@ -44,6 +67,10 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         keys = pygame.key.get_pressed()
         self.idle = True
+
+        if keys[pygame.K_SPACE]:
+            print("Space pressed")  # Debug
+            self.shoot()
 
         if keys[pygame.K_LSHIFT]:
             self.speed = 0.5
@@ -76,6 +103,18 @@ class Player(pygame.sprite.Sprite):
         else:
             self.update_walk_animation()
 
+        # Ajout de la gestion du tir
+        if keys[pygame.K_SPACE]:  # Tir avec la barre d'espace
+            self.shoot()
+
+        # Mise à jour des balles
+        self.bullets.update()
+
+        # Suppression des balles hors écran
+        for bullet in self.bullets:
+            if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
+                bullet.kill()
+
     def update_idle_animation(self):
         self.idle_timer += 1
         if self.idle_timer >= self.animation_speed:  # Adjust the speed of the animation
@@ -89,3 +128,7 @@ class Player(pygame.sprite.Sprite):
             self.walk_timer = 0
             self.walk_index = (self.walk_index + 1) % len(self.walk_images[self.direction])
             self.image = self.walk_images[self.direction][self.walk_index]
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect.topleft)
+        self.bullets.draw(surface)
