@@ -1,6 +1,7 @@
 import pygame
 import sys
 from scenes.menu import Menu
+from scenes.world import Map
 
 # Initialize Pygame
 pygame.init()
@@ -11,6 +12,7 @@ pygame.display.set_caption("Western Game")
 
 # Create the menu
 menu = Menu(frame)
+map = None
 
 # Main game loop
 running = True
@@ -23,16 +25,22 @@ while running:
             action = menu.handle_event(event)
             if action == "start_game":
                 in_menu = False
+                map = Map(frame)
             elif action == "quit":
                 running = False
+        else:
+            # Handle map events if needed
+            pass
 
     if in_menu:
         menu.display_menu()
     else:
-        # Fill the screen with a color (optional)
-        frame.fill((0, 0, 0))
-        # Update the display
-        pygame.display.flip()
+        # Update and draw the map
+        map.update()
+        map.draw()
+
+    # Update the display
+    pygame.display.flip()
 
 # Quit Pygame
 pygame.quit()
