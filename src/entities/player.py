@@ -79,19 +79,19 @@ class Player(pygame.sprite.Sprite):
             self.speed = 0.2
             self.animation_speed = 60
 
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] or keys[pygame.K_q]:
             self.position.x -= self.speed
             self.idle = False
             self.direction = 'left'
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.position.x += self.speed
             self.idle = False
             self.direction = 'right'
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] or keys[pygame.K_z]:
             self.position.y -= self.speed
             self.idle = False
             self.direction = 'up'
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
             self.position.y += self.speed
             self.idle = False
             self.direction = 'down'
