@@ -2,6 +2,7 @@
 import pygame
 import random
 import math
+from scenes.winpage import WinScene
 
 class Target:
     def __init__(self):
@@ -51,7 +52,7 @@ class Combat:
         self.accuracy = 0
         self.font = pygame.font.SysFont('Arial', 32)
         self.start_time = pygame.time.get_ticks()
-        self.game_time = 20  # Durée du jeu en secondes
+        self.game_time = 5  # Durée du jeu en secondes
         self.background = pygame.image.load('assets/images/shooter_bg.png')  # Charger l'image de fond
         self.background = pygame.transform.scale(self.background, self.frame.get_size())  # Redimensionner l'image de fond
         self.clock = pygame.time.Clock()
@@ -102,7 +103,7 @@ class Combat:
             print("Défaite! Votre précision est inférieure à 50% ou votre score est insuffisant.")
         else:  # Condition de victoire
             print("Victoire! Vous avez gagné.")
-            self.player.points += 1
+            self.player.points += 5
             self.player.money += int(self.accuracy * 10)
 
     def run(self):
