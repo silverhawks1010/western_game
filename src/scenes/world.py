@@ -1,4 +1,5 @@
 import os
+import random
 
 import pygame
 import pytmx
@@ -40,14 +41,13 @@ class Map:
         self.player = Player(map_center)
         self.group.add(self.player)
 
-        npc1 = NPC((map_center[0] - 50, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png', "Hello, I'm NPC 1!",
-                   interaction_type='dialog')
-        npc2 = NPC((map_center[0] + 100, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png',
-                   "Press the button quickly!", interaction_type='qte')
-        npc3 = NPC((map_center[0], map_center[1] + 100), 'assets/images/sprite/npc/CowBoyIdle.png',
-                   "Prepare for battle!", interaction_type='combat')
-        self.npcs.add(npc1, npc2, npc3)
-        self.group.add(npc1, npc2, npc3)
+        for _ in range(5):
+            x = random.randint(0, self.map_layer.map_rect.width)
+            y = random.randint(0, self.map_layer.map_rect.height)
+            npc = NPC((x, y), 'assets/images/sprite/npc/CowBoyIdle.png', "Prepare for battle!",
+                      interaction_type='combat')
+            self.npcs.add(npc)
+            self.group.add(npc)
 
         # Arrêter la musique actuelle et jouer la nouvelle musique de fond
         self.bg_channel.stop()
