@@ -55,7 +55,7 @@ class Menu:
         self.hover_channel = pygame.mixer.Channel(1)
 
         # Play background sound
-        self.bg_channel.set_volume(0.05)
+        self.bg_channel.set_volume(0.1)
         self.bg_channel.play(self.bg_sound, loops=-1)
 
     def display_menu(self):
