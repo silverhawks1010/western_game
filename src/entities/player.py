@@ -11,17 +11,20 @@ class Player(pygame.sprite.Sprite):
         self.image = self.idle_images['down'][0]
         self.rect = self.image.get_rect(center=position)
         self.position = pygame.Vector2(position)
-        self.speed = 0.2  # Default speed
+        self.speed = 10  # Default speed in pixels per second
         self.idle = True
         self.direction = 'down'
         self.idle_index = 0
         self.idle_timer = 0
         self.walk_index = 0
         self.walk_timer = 0
-        self.animation_speed = 60  # Default animation speed
+        self.animation_speed = 0.02  # Default animation speed in seconds per frame
         self.bullets = pygame.sprite.Group()  # Groupe pour gérer les balles
         self.last_shot = 0
         self.shot_cooldown = 500  # Délai entre les tirs en millisecondes
+
+        self.points = 0
+        self.money = 0
 
         try:
             self.bullet_sprites = {
@@ -64,7 +67,7 @@ class Player(pygame.sprite.Sprite):
                 walk_images[direction].append(frame)
         return walk_images
 
-    def update(self):
+    def update(self, delta_time):
         keys = pygame.key.get_pressed()
         self.idle = True
 
@@ -73,35 +76,35 @@ class Player(pygame.sprite.Sprite):
             self.shoot()
 
         if keys[pygame.K_LSHIFT]:
-            self.speed = 0.5
-            self.animation_speed = 40
+            self.speed = 100  # Speed in pixels per second
+            self.animation_speed = 0.2  # Animation speed in seconds per frame
         else:
-            self.speed = 0.2
-            self.animation_speed = 60
+            self.speed = 50  # Speed in pixels per second
+            self.animation_speed = 0.3  # Animation speed in seconds per frame
 
         if keys[pygame.K_LEFT] or keys[pygame.K_q]:
-            self.position.x -= self.speed
+            self.position.x -= self.speed * delta_time
             self.idle = False
             self.direction = 'left'
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.position.x += self.speed
+            self.position.x += self.speed * delta_time
             self.idle = False
             self.direction = 'right'
         if keys[pygame.K_UP] or keys[pygame.K_z]:
-            self.position.y -= self.speed
+            self.position.y -= self.speed * delta_time
             self.idle = False
             self.direction = 'up'
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.position.y += self.speed
+            self.position.y += self.speed * delta_time
             self.idle = False
             self.direction = 'down'
 
         self.rect.topleft = self.position  # Update rect position based on the floating-point position
 
         if self.idle:
-            self.update_idle_animation()
+            self.update_idle_animation(delta_time)
         else:
-            self.update_walk_animation()
+            self.update_walk_animation(delta_time)
 
         # Ajout de la gestion du tir
         if keys[pygame.K_SPACE]:  # Tir avec la barre d'espace
@@ -115,15 +118,15 @@ class Player(pygame.sprite.Sprite):
             if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
                 bullet.kill()
 
-    def update_idle_animation(self):
-        self.idle_timer += 1
-        if self.idle_timer >= self.animation_speed:  # Adjust the speed of the animation
+    def update_idle_animation(self, delta_time):
+        self.idle_timer += delta_time
+        if self.idle_timer >= (self.animation_speed + 0.1):  # Adjust the speed of the animation
             self.idle_timer = 0
             self.idle_index = (self.idle_index + 1) % len(self.idle_images[self.direction])
             self.image = self.idle_images[self.direction][self.idle_index]
 
-    def update_walk_animation(self):
-        self.walk_timer += 1
+    def update_walk_animation(self, delta_time):
+        self.walk_timer += delta_time
         if self.walk_timer >= self.animation_speed:  # Adjust the speed of the animation
             self.walk_timer = 0
             self.walk_index = (self.walk_index + 1) % len(self.walk_images[self.direction])

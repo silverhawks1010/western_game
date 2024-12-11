@@ -17,15 +17,15 @@ class Target:
         self.rail = random.randint(0, 2)
         self.y = 200 + (self.rail * 100)
         self.direction = random.choice([-1, 1])
-        self.speed = random.uniform(2, 5)
+        self.speed = random.uniform(500, 1000)
         if self.direction == 1:
             self.x = -self.radius
         else:
             self.x = pygame.display.get_surface().get_width() + self.radius
         self.active = True
 
-    def move(self):
-        self.x += self.speed * self.direction
+    def move(self, delta_time):
+        self.x += self.speed * self.direction * delta_time
         if (self.x < -self.radius * 2) or (self.x > pygame.display.get_surface().get_width() + self.radius * 2):
             self.active = False
 
@@ -51,7 +51,10 @@ class Combat:
         self.accuracy = 0
         self.font = pygame.font.SysFont('Arial', 32)
         self.start_time = pygame.time.get_ticks()
-        self.game_time = 60
+        self.game_time = 20  # Durée du jeu en secondes
+        self.background = pygame.image.load('assets/images/shooter_bg.png')  # Charger l'image de fond
+        self.background = pygame.transform.scale(self.background, self.frame.get_size())  # Redimensionner l'image de fond
+        self.clock = pygame.time.Clock()
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -65,12 +68,48 @@ class Combat:
                 if distance < target.radius:
                     points = int(100 * target.point_multiplier * (1 - distance/target.radius))
                     self.score += points
+                    self.hits += 1
+                    target.active = False
+
+    def update(self, delta_time):
+        if pygame.time.get_ticks() - self.start_time > self.game_time * 1000:
+            self.running = False
+            self.end_game()
+        if len(self.targets) < 5:
+            self.targets.append(Target())
+        for target in self.targets:
+            target.move(delta_time)
+        self.targets = [target for target in self.targets if target.active]
+        if self.shots > 0:
+            self.accuracy = (self.hits / self.shots) * 100
+
+    def draw(self):
+        self.frame.blit(self.background, (0, 0))  # Dessiner l'image de fond redimensionnée
+        for target in self.targets:
+            target.draw(self.frame)
+        score_text = self.font.render(f'Score: {self.score}', True, (255, 255, 255))
+        accuracy_text = self.font.render(f'Accuracy: {self.accuracy:.2f}%', True, (255, 255, 255))
+        time_left = self.game_time - (pygame.time.get_ticks() - self.start_time) // 1000
+        time_text = self.font.render(f'Time Left: {time_left}s', True, (255, 255, 255))
+        self.frame.blit(score_text, (10, 10))
+        self.frame.blit(accuracy_text, (10, 50))
+        self.frame.blit(time_text, (10, 90))
+
+    def end_game(self):
+        print(f"Score: {self.score}")
+        print(f"Shots: {self.accuracy}")
+        if self.accuracy < 1 or self.score < 10:  # Condition de défaite
+            print("Défaite! Votre précision est inférieure à 50% ou votre score est insuffisant.")
+        else:  # Condition de victoire
+            print("Victoire! Vous avez gagné.")
+            self.player.points += 1
+            self.player.money += int(self.accuracy * 10)
 
     def run(self):
         while self.running:
+            delta_time = self.clock.tick(60) / 1000.0  # Temps écoulé en secondes
             for event in pygame.event.get():
                 self.handle_event(event)
-            self.update()
+            self.update(delta_time)
             self.draw()
             pygame.display.flip()
-

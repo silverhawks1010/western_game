@@ -25,7 +25,7 @@ class NPC(pygame.sprite.Sprite):
             frames.append(frame)
         return frames
 
-    def update(self):
+    def update(self, delta_time):
         now = pygame.time.get_ticks()
         if now - self.last_update > self.animation_speed:
             self.last_update = now

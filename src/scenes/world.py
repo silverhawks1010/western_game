@@ -1,3 +1,5 @@
+import os
+
 import pygame
 import pytmx
 import pyscroll
@@ -15,8 +17,17 @@ class Map:
         self.npcs = pygame.sprite.Group()
         self.show_hitboxes = True
         self.active_npc = None  # Track the active NPC for dialog
+        self.explo_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "background_sound_theme_chill.mp3"))
+        self.battle_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "Theme_arcade.mp3"))
+        self.bg_channel = pygame.mixer.Channel(0)
+        self.explo_sound.set_volume(0.08)
+        self.battle_sound.set_volume(0.08)
+        self.font = pygame.font.SysFont('Arial', 32)  # Charger la police pour afficher le texte
+        self.clock = pygame.time.Clock()  # Ajouter un horloge pour calculer delta_time
 
         self.switch_map("western_map")
+
+    # src/scenes/world.py
 
     def switch_map(self, map_name):
         self.tmx_data = pytmx.load_pygame(f"assets/map/{map_name}.tmx")
@@ -29,18 +40,26 @@ class Map:
         self.player = Player(map_center)
         self.group.add(self.player)
 
-        npc1 = NPC((map_center[0] - 50, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png', "Hello, I'm NPC 1!", interaction_type='dialog')
-        npc2 = NPC((map_center[0] + 100, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png', "Press the button quickly!", interaction_type='qte')
-        npc3 = NPC((map_center[0], map_center[1] + 100), 'assets/images/sprite/npc/CowBoyIdle.png', "Prepare for battle!", interaction_type='combat')
+        npc1 = NPC((map_center[0] - 50, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png', "Hello, I'm NPC 1!",
+                   interaction_type='dialog')
+        npc2 = NPC((map_center[0] + 100, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png',
+                   "Press the button quickly!", interaction_type='qte')
+        npc3 = NPC((map_center[0], map_center[1] + 100), 'assets/images/sprite/npc/CowBoyIdle.png',
+                   "Prepare for battle!", interaction_type='combat')
         self.npcs.add(npc1, npc2, npc3)
         self.group.add(npc1, npc2, npc3)
 
+        # Arrêter la musique actuelle et jouer la nouvelle musique de fond
+        self.bg_channel.stop()
+        self.bg_channel.play(self.explo_sound, loops=-1)
+
     def update(self):
-        self.player.update()
-        self.npcs.update()
+        delta_time = self.clock.tick(60) / 1000.0  # Temps écoulé en secondes
+        self.player.update(delta_time)
+        self.npcs.update(delta_time)
         self.handle_interactions()
         self.handle_collisions()
-        self.group.update()
+        self.group.update(delta_time)
         self.group.center(self.player.rect.center)
 
     def handle_interactions(self):
@@ -60,11 +79,18 @@ class Map:
     def start_qte(self, npc):
         print("Quick Time Event: " + npc.message)
 
+    def remove_npc(self, npc):
+        self.npcs.remove(npc)
+        self.group.remove(npc)
+
     def start_combat(self, npc):
         print("Combat: " + npc.message)
         combat = Combat(self.screen, self.player, npc)
         combat.run()
         self.current_combat = combat
+        self.bg_channel.stop()
+        self.bg_channel.play(self.battle_sound, loops=-1)
+        self.remove_npc(npc)
 
     def handle_collisions(self):
         for npc in self.npcs:
@@ -83,9 +109,16 @@ class Map:
         self.group.draw(self.screen)
         if self.show_hitboxes:
             for npc in self.npcs:
-                pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
+                # Code pour dessiner les hitboxes
+                pass
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
+
+        # Afficher l'argent du joueur
+        money_text = self.font.render(f'Argent: {self.player.money}', True, (255, 255, 255))
+        score_text = self.font.render(f'Score: {self.player.points}/5', True, (255, 255, 255))
+        self.screen.blit(money_text, (10, 10))
+        self.screen.blit(score_text, (10, 50))
 
     def toggle_hitboxes(self):
         self.show_hitboxes = not self.show_hitboxes
