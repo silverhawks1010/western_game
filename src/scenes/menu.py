@@ -193,7 +193,7 @@ class Menu:
             # Mise à l'échelle
             self.scale_x = self.screen_width / self.base_width
             self.scale_y = self.screen_height / self.base_height
-            self.font_size = int(74 * min(self.scale_x, self.scale_y))
+            self.font_size = int(60 * min(self.scale_x, self.scale_y))
             self.font = pygame.font.Font(os.path.join("assets", "fonts", "western.ttf"), self.font_size)
 
             # Background
@@ -225,7 +225,7 @@ class Menu:
                     color = (255, 255, 255)
 
                 label = self.font.render(option, True, color)
-                label_rect = label.get_rect(center=(self.screen_width // 2, start_y + i * spacing))
+                label_rect = label.get_rect(center=(self.screen_width // 1.98, start_y + i * spacing))
                 self.screen.blit(label, label_rect)
 
             if self.options_menu:
