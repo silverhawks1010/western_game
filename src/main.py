@@ -29,15 +29,26 @@ while running:
             elif action == "quit":
                 running = False
         else:
-            # Handle map events if needed
-            pass
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    in_menu = True
 
     if in_menu:
         menu.display_menu()
     else:
-        # Update and draw the map
+        # Mise à jour du jeu
         map.update()
+
+        # Mise à jour et dessin des balles
+        if hasattr(map, 'player'):
+            map.player.bullets.update()
+
+        # Dessin de la map et des éléments
         map.draw()
+
+        # Dessin des balles
+        if hasattr(map, 'player'):
+            map.player.bullets.draw(frame)
 
     # Update the display
     pygame.display.flip()
