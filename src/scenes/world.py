@@ -3,6 +3,7 @@ import pytmx
 import pyscroll
 from entities.player import Player
 from entities.npc import NPC
+from scenes.combat import Combat
 
 class Map:
     def __init__(self, screen):
@@ -15,13 +16,13 @@ class Map:
         self.show_hitboxes = True
         self.active_npc = None  # Track the active NPC for dialog
 
-        self.switch_map("test")
+        self.switch_map("western_map")
 
     def switch_map(self, map_name):
         self.tmx_data = pytmx.load_pygame(f"assets/map/{map_name}.tmx")
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.BufferedRenderer(map_data, self.screen.get_size())
-        self.map_layer.zoom = 2
+        self.map_layer.zoom = 3
         self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=7)
 
         map_center = (self.map_layer.map_rect.width // 2, self.map_layer.map_rect.height // 2)
@@ -30,8 +31,9 @@ class Map:
 
         npc1 = NPC((map_center[0] - 50, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png', "Hello, I'm NPC 1!", interaction_type='dialog')
         npc2 = NPC((map_center[0] + 100, map_center[1]), 'assets/images/sprite/npc/CowBoyIdle.png', "Press the button quickly!", interaction_type='qte')
-        self.npcs.add(npc1, npc2)
-        self.group.add(npc1, npc2)
+        npc3 = NPC((map_center[0], map_center[1] + 100), 'assets/images/sprite/npc/CowBoyIdle.png', "Prepare for battle!", interaction_type='combat')
+        self.npcs.add(npc1, npc2, npc3)
+        self.group.add(npc1, npc2, npc3)
 
     def update(self):
         self.player.update()
@@ -50,11 +52,19 @@ class Map:
                         self.active_npc = npc
                     elif npc.interaction_type == 'qte':
                         self.start_qte(npc)
+                    elif npc.interaction_type == 'combat':
+                        self.start_combat(npc)
         else:
             self.active_npc = None
 
     def start_qte(self, npc):
         print("Quick Time Event: " + npc.message)
+
+    def start_combat(self, npc):
+        print("Combat: " + npc.message)
+        combat = Combat(self.screen, self.player, npc)
+        combat.run()
+        self.current_combat = combat
 
     def handle_collisions(self):
         for npc in self.npcs:

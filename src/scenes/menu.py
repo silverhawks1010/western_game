@@ -206,7 +206,7 @@ class Menu:
             self.bg_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "main_music.mp3"))
             self.bg_channel = pygame.mixer.Channel(0)
             self.hover_channel = pygame.mixer.Channel(1)
-            self.bg_channel.set_volume(0.1)
+            self.bg_channel.set_volume(0.05)
             self.bg_channel.play(self.bg_sound, loops=-1)
 
             self.selected_option = -1
