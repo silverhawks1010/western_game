@@ -1,5 +1,5 @@
 import pygame
-from entities.projectile import Bullet
+from src.entities.projectile import Bullet
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, character_index, position, collision_layer):
@@ -67,7 +67,10 @@ class Player(pygame.sprite.Sprite):
         self.points = 0
         self.money = 0
 
-        # Chargement des sprites des balles
+        # Chargement des sprites des balles et des sons
+        self.bullet_sprites = None  # Initialiser l'attribut
+        self.load_bullet_sprites()  # Appeler la méthode pour charger les sprites
+
         try:
             self.reload_sound = pygame.mixer.Sound('assets/sounds/revolver_reload.mp3')
             self.reload_sound.set_volume(0.1)
@@ -96,7 +99,7 @@ class Player(pygame.sprite.Sprite):
             }
         except Exception as e:
             print(f"Error loading bullet sprites: {e}")
-            return {'up': None, 'down': None, 'left': None, 'right': None}
+            self.bullet_sprites = {'up': None, 'down': None, 'left': None, 'right': None}
 
         # Chargement du son de tir
         try:
