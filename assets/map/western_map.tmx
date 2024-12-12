@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<<<<<<< Updated upstream
 <map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="500" height="300" tilewidth="16" tileheight="16" infinite="0" nextlayerid="18" nextobjectid="132">
+=======
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="500" height="300" tilewidth="16" tileheight="16" infinite="0" nextlayerid="18" nextobjectid="138">
+>>>>>>> Stashed changes
  <tileset firstgid="1" source="base_element_map.tsx"/>
  <tileset firstgid="4001" source="maison2.tsx"/>
  <tileset firstgid="4962" source="maison.tsx"/>
@@ -1284,6 +1288,7 @@
   <object id="99" name="Collisions" x="3761" y="2289.5">
    <polygon points="0,0 0,0 0,0 0,0"/>
   </object>
+<<<<<<< Updated upstream
   <object id="100" name="Collisions" x="3666.5" y="2341.5" width="58.5" height="58"/>
   <object id="101" name="Collisions" x="3747.5" y="2322"/>
   <object id="103" name="Collisions" x="3703.5" y="2229.5"/>
@@ -1312,5 +1317,40 @@
   <object id="129" name="Collisions" x="4242" y="2127.33" width="58.6667" height="66"/>
   <object id="130" name="Collisions" x="4154" y="1812"/>
   <object id="131" name="Collisions" x="3994" y="1711.33" width="142.667" height="19.3333"/>
+=======
+  <object id="100" x="3666.5" y="2341.5" width="58.5" height="58"/>
+  <object id="101" x="3747.5" y="2322"/>
+  <object id="103" x="3703.5" y="2229.5"/>
+  <object id="105" x="3752" y="2279"/>
+  <object id="106" x="3765" y="2280"/>
+  <object id="107" x="3767" y="2294"/>
+  <object id="108" x="3753" y="2294.5"/>
+  <object id="110" x="3746.5" y="2497.5" width="60" height="63.5"/>
+  <object id="111" x="3822.5" y="2519.5" width="66.5" height="139.5"/>
+  <object id="112" x="3872" y="2303" width="405.5" height="161"/>
+  <object id="114" x="3884" y="2464" width="369.333" height="225.333"/>
+  <object id="115" x="4255.33" y="2516.67" width="70.6667" height="141.333"/>
+  <object id="116" x="4325.33" y="2542.67" width="43.3333" height="70"/>
+  <object id="117" x="4337.33" y="2434.67"/>
+  <object id="118" x="4574.67" y="2400.67"/>
+  <object id="119" x="4403.33" y="2434" width="60" height="63.3333"/>
+  <object id="120" x="4356.67" y="2323.33" width="61.3333" height="64.6667"/>
+  <object id="121" x="4035.33" y="2231.33" width="58" height="55.3333"/>
+  <object id="122" x="4338" y="2129.33" width="128.667" height="17.3333"/>
+  <object id="123" x="4288.67" y="1794"/>
+  <object id="124" x="3935.33" y="1713.33"/>
+  <object id="125" x="3935.33" y="1713.33"/>
+  <object id="126" x="4228.67" y="1696.67" width="56.6667" height="64"/>
+  <object id="127" x="4348.67" y="1946" width="108" height="21.3333"/>
+  <object id="128" x="4240.67" y="2176"/>
+  <object id="129" x="4242" y="2127.33" width="58.6667" height="66"/>
+  <object id="130" x="4154" y="1812"/>
+  <object id="131" x="3994" y="1711.33" width="142.667" height="19.3333"/>
+  <object id="133" x="4190" y="1934" width="69.3333" height="70.6667"/>
+  <object id="134" x="3642" y="1958"/>
+  <object id="135" x="3662" y="1959.33"/>
+  <object id="136" x="3681.67" y="1957"/>
+  <object id="137" x="3686.33" y="1958"/>
+>>>>>>> Stashed changes
  </objectgroup>
 </map>
