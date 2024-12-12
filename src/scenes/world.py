@@ -3,9 +3,9 @@ import random
 import pygame
 import pytmx
 import pyscroll
-from entities.player import Player
-from entities.npc import NPC
-from scenes.combat import Combat
+from src.entities.player import Player
+from src.entities.npc import NPC
+from src.scenes.combat import Combat
 
 class Map:
     def __init__(self, screen, selected_character):
@@ -34,7 +34,7 @@ class Map:
         self.star_image = pygame.transform.scale(pygame.image.load('assets/images/star.png'), (23, 23))
         self.coin_image = pygame.transform.scale(pygame.image.load('assets/images/coins.png'), (32, 32))
 
-        self.selected_character = selected_character  # Ajoutez ceci
+        self.selected_character = selected_character
         self.switch_map("western_map")
 
     def switch_map(self, map_name):
@@ -46,8 +46,7 @@ class Map:
 
         # Collision layer
         self.collision_layer = self.tmx_data.get_layer_by_name('Collisions')
-
-        # Player
+        # Passer le character_selected dans le constructeur
         self.player = Player(self.selected_character, (791, 721), self.collision_layer)
         self.group.add(self.player, layer=1)
 
@@ -104,30 +103,6 @@ class Map:
 
         self.group.center(self.player.rect.center)
 
-    def handle_interactions(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_e]:
-            for npc in self.npcs:
-                if self.player.rect.colliderect(npc.rect):
-                    if npc.interaction_type == 'combat':
-                        self.start_combat(npc)
-
-    def remove_npc(self, npc):
-        self.npcs.remove(npc)
-        self.group.remove(npc)
-
-    def start_combat(self, npc):
-        self.bg_channel.stop()
-        self.bg_channel.play(self.battle_sound, loops=-1)
-
-        combat = Combat(self.screen, self.player, npc)
-        combat.run()
-
-        self.bg_channel.stop()
-        self.bg_channel.play(self.explo_sound, loops=-1)
-
-        self.remove_npc(npc)
-
     def draw(self):
         self.group.draw(self.screen)
         self.player.bullets.draw(self.screen)
@@ -136,48 +111,72 @@ class Map:
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
-        # Draw HUD
-        self.draw_hud()
+        self.screen.blit(self.hud_image, (10, 10))
+
+        # Center the text within the HUD
+        hud_rect = self.hud_image.get_rect(topleft=(10, 10))
+
+        agent_text = self.hud_font.render(f'{self.player.money}', True, (255, 255, 0))
+        agent_text_rect = agent_text.get_rect(center=(hud_rect.centerx, hud_rect.centery * 0.70))
+
+        coin_image_rect = self.coin_image.get_rect()
+        coin_image_rect.topleft = (hud_rect.centerx*0.25, hud_rect.centery * 0.45)
+        self.screen.blit(self.coin_image, coin_image_rect.topleft)
+        self.screen.blit(agent_text, agent_text_rect)
+
+        # Draw stars for points
+        total_stars_width = self.player.points * 33
+        start_x = hud_rect.centerx - total_stars_width // 2.1
+        for i in range(self.player.points):
+            star_x = start_x + i * 33
+            star_y = hud_rect.top + 60
+            self.screen.blit(self.star_image, (star_x, star_y))
+
+        # Draw ammo icons
+        ammo_start_x = self.screen.get_width() - 180
+        ammo_start_y = 20
+        spacing = 20
+
+        if self.player.is_reloading:
+            # Calculate bullets being reloaded
+            current_time = pygame.time.get_ticks()
+            reload_progress = (current_time - self.player.reload_start) / self.player.reload_time
+            bullets_to_reload = self.player.max_magazine - self.player.ammo_in_magazine
+            bullets_reloaded = min(bullets_to_reload, int(reload_progress * bullets_to_reload))
+
+            for i in range(self.player.max_magazine):
+                icon_pos = (ammo_start_x + (i * spacing), ammo_start_y)
+                if i < self.player.ammo_in_magazine:
+                    # Current bullets
+                    self.screen.blit(self.player.ammo_icon, icon_pos)
+                elif i < self.player.ammo_in_magazine + bullets_reloaded:
+                    # Reloading bullets with fade effect
+                    alpha = min(255, int((reload_progress * 255)))
+                    fading_icon = self.player.ammo_icon.copy()
+                    fading_icon.set_alpha(alpha)
+                    self.screen.blit(fading_icon, icon_pos)
+                else:
+                    # Empty slots
+                    grey_icon = self.player.ammo_icon.copy()
+                    grey_icon.fill((100, 100, 100, 128), special_flags=pygame.BLEND_RGBA_MULT)
+                    self.screen.blit(grey_icon, icon_pos)
+        else:
+            # Normal ammo display
+            for i in range(self.player.max_magazine):
+                icon_pos = (ammo_start_x + (i * spacing), ammo_start_y)
+                if i < self.player.ammo_in_magazine:
+                    self.screen.blit(self.player.ammo_icon, icon_pos)
+                else:
+                    grey_icon = self.player.ammo_icon.copy()
+                    grey_icon.fill((100, 100, 100, 128), special_flags=pygame.BLEND_RGBA_MULT)
+                    self.screen.blit(grey_icon, icon_pos)
+
+        # Draw total ammo
+        total_ammo_text = self.hud_font.render(f"/{self.player.total_ammo}", True, (255, 255, 255))
+        self.screen.blit(total_ammo_text, (ammo_start_x + (self.player.max_magazine * spacing) + 5, ammo_start_y))
 
         if self.dev_mode:
             self.draw_hitboxes()
-            self.draw_collision_layer()
-
-
-    def draw_hud(self):
-        self.screen.blit(self.hud_image, (10, 10))
-        hud_rect = self.hud_image.get_rect(topleft=(10, 10))
-
-        # Draw coins
-        coin_image_rect = self.coin_image.get_rect()
-        coin_image_rect.topleft = (hud_rect.x + 20, hud_rect.y + 20)
-        self.screen.blit(self.coin_image, coin_image_rect.topleft)
-
-        money_text = self.hud_font.render(f'{self.player.money}', True, (255, 255, 0))
-        money_text_rect = money_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery))
-        self.screen.blit(money_text, money_text_rect)
-
-        # Draw stars (points)
-        start_x = hud_rect.x + 20
-        for i in range(self.player.points):
-            star_x = start_x + i * (self.star_image.get_width() + 5)
-            self.screen.blit(self.star_image, (star_x, hud_rect.y + 60))
-
-        # draw coordonnées
-        coord_text = self.hud_font.render(f'{self.player.rect.topleft}', True, (255, 255, 0))
-        coord_text_rect = coord_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery+30))
-        self.screen.blit(coord_text, coord_text_rect)
-
-    def draw_collision_layer(self):
-        for obj in self.collision_layer:
-            if obj.name == 'Collisions':
-                rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
-                pygame.draw.rect(self.screen, (0, 0, 255), rect, 2) # Draw the collision box in blue
-
-    def draw_hitboxes(self):
-        for npc in self.npcs:
-            pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
-        pygame.draw.rect(self.screen, (0, 255, 0), self.player.rect, 2)
 
     def toggle_hitboxes(self):
         self.dev_mode = not self.dev_mode
