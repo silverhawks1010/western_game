@@ -1,26 +1,54 @@
 import pygame
-from src.entities.projectile import Bullet
+from entities.projectile import Bullet
+
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, position, collision_layer):
+    def __init__(self, character_index, position, collision_layer):
         super().__init__()
-        self.idle_sprite_sheet = pygame.image.load('assets/images/sprite/mainchara/western_idle.png').convert_alpha()
-        self.walk_sprite_sheet = pygame.image.load('assets/images/sprite/mainchara/western_walk.png').convert_alpha()
+
+        # Chemins des sprites basés sur l'index du personnage
+        character_sprites = {
+            0: {  # Bleu
+                'idle': 'assets/images/sprite/mainchara/BLEU_idle.png',
+                'walk': 'assets/images/sprite/mainchara/BLEU_walk.png'
+            },
+            1: {  # Orange
+                'idle': 'assets/images/sprite/mainchara/ORANGE_idle.png',
+                'walk': 'assets/images/sprite/mainchara/ORANGE_walk.png'
+            },
+            2: {  # Western (original)
+                'idle': 'assets/images/sprite/mainchara/western_idle.png',
+                'walk': 'assets/images/sprite/mainchara/western_walk.png'
+            }
+        }
+
+        # Chargement des sprites du personnage sélectionné
+        self.idle_sprite_sheet = pygame.image.load(character_sprites[character_index]['idle']).convert_alpha()
+        self.walk_sprite_sheet = pygame.image.load(character_sprites[character_index]['walk']).convert_alpha()
+
+        # Chargement des images d'animation
         self.idle_images = self.load_idle_images()
         self.walk_images = self.load_walk_images()
+
+        # Initialisation de l'image et du rectangle
         self.image = self.idle_images['down'][0]
         self.rect = self.image.get_rect(center=position)
-        self.rect.height = int(self.rect.height * 0.1)  # Reduce height by 50%
-        self.rect.centery = position[1]
         self.position = pygame.Vector2(position)
-        self.speed = 10
+
+        # Variables de mouvement et d'animation
+        self.speed = 50
         self.idle = True
         self.direction = 'down'
         self.idle_index = 0
         self.idle_timer = 0
         self.walk_index = 0
         self.walk_timer = 0
-        self.animation_speed = 0.02
+        self.animation_speed = 0.3  # En secondes par frame
+
+        # Couche de collision
+        self.collision_layer = collision_layer
+
+        # Gestion des tirs
         self.bullets = pygame.sprite.Group()
         self.last_shot = 0
         self.shot_cooldown = 800
@@ -31,17 +59,13 @@ class Player(pygame.sprite.Sprite):
         self.is_reloading = False
         self.reload_time = 7000  # 10 secondes en millisecondes
         self.reload_start = 0
+        self.shot_cooldown = 1500
 
+        # Points et argent
         self.points = 0
         self.money = 0
 
-        self.bullet_sprites = {
-            'up': None,
-            'down': None,
-            'left': None,
-            'right': None
-        }
-
+        # Chargement des sprites des balles
         try:
             self.reload_sound = pygame.mixer.Sound('assets/sounds/revolver_reload.mp3')
             self.reload_sound.set_volume(0.1)
@@ -68,9 +92,10 @@ class Player(pygame.sprite.Sprite):
         except Exception as e:
             print(f"Error loading bullet sprites: {e}")
 
+        # Chargement du son de tir
         try:
             self.shot_sound = pygame.mixer.Sound('assets/sounds/gunshot1.wav')
-            self.shot_sound.set_volume(0.1)  # Réduire le volume à 10% (ajustez entre 0.0 et 1.0)
+            self.shot_sound.set_volume(0.1)
             print("Shot sound loaded successfully")
         except Exception as e:
             print(f"Error loading shot sound: {e}")
@@ -138,33 +163,31 @@ class Player(pygame.sprite.Sprite):
 
     def load_idle_images(self):
         idle_images = {'down': [], 'right': [], 'left': [], 'up': []}
-        frame_width = self.idle_sprite_sheet.get_width() // 4  # Assuming 4 frames per row in the sprite sheet
-        frame_height = self.idle_sprite_sheet.get_height() // 4  # Assuming 4 rows for each direction
+        frame_width = self.idle_sprite_sheet.get_width() // 4
+        frame_height = self.idle_sprite_sheet.get_height() // 4
         for direction, row in zip(idle_images.keys(), range(4)):
             for i in range(4):
-                frame = self.idle_sprite_sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width * 1.5, frame_height * 1.5))  # Scale the frame
+                frame = self.idle_sprite_sheet.subsurface(
+                    pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
+                frame = pygame.transform.scale(frame, (frame_width * 2, frame_height * 2))
                 idle_images[direction].append(frame)
         return idle_images
 
     def load_walk_images(self):
         walk_images = {'down': [], 'right': [], 'left': [], 'up': []}
-        frame_width = self.walk_sprite_sheet.get_width() // 4  # Assuming 4 frames per row in the sprite sheet
-        frame_height = self.walk_sprite_sheet.get_height() // 4  # Assuming 4 rows for each direction
+        frame_width = self.walk_sprite_sheet.get_width() // 4
+        frame_height = self.walk_sprite_sheet.get_height() // 4
         for direction, row in zip(walk_images.keys(), range(4)):
             for i in range(4):
-                frame = self.walk_sprite_sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width * 1.5, frame_height * 1.5))  # Scale the frame
+                frame = self.walk_sprite_sheet.subsurface(
+                    pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
+                frame = pygame.transform.scale(frame, (frame_width * 2, frame_height * 2))
                 walk_images[direction].append(frame)
         return walk_images
 
     def update(self, delta_time, npcs=None):
         keys = pygame.key.get_pressed()
         self.idle = True
-
-        if keys[pygame.K_SPACE]:
-            print("Space pressed")  # Debug
-            self.shoot()
 
         if keys[pygame.K_LSHIFT]:
             self.speed = 100  # Speed in pixels per second
@@ -173,24 +196,25 @@ class Player(pygame.sprite.Sprite):
             self.speed = 50  # Speed in pixels per second
             self.animation_speed = 0.3  # Animation speed in seconds per frame
 
+        directions = {
+            pygame.K_LEFT: ('left', -self.speed * delta_time, 0),
+            pygame.K_q: ('left', -self.speed * delta_time, 0),
+            pygame.K_RIGHT: ('right', self.speed * delta_time, 0),
+            pygame.K_d: ('right', self.speed * delta_time, 0),
+            pygame.K_UP: ('up', 0, -self.speed * delta_time),
+            pygame.K_z: ('up', 0, -self.speed * delta_time),
+            pygame.K_DOWN: ('down', 0, self.speed * delta_time),
+            pygame.K_s: ('down', 0, self.speed * delta_time)
+        }
+
         new_position = self.position.copy()
 
-        if keys[pygame.K_LEFT] or keys[pygame.K_q]:
-            new_position.x -= self.speed * delta_time
-            self.idle = False
-            self.direction = 'left'
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            new_position.x += self.speed * delta_time
-            self.idle = False
-            self.direction = 'right'
-        if keys[pygame.K_UP] or keys[pygame.K_z]:
-            new_position.y -= self.speed * delta_time
-            self.idle = False
-            self.direction = 'up'
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            new_position.y += self.speed * delta_time
-            self.idle = False
-            self.direction = 'down'
+        for key, (dir, dx, dy) in directions.items():
+            if keys[key]:
+                self.direction = dir
+                new_position.x += dx
+                new_position.y += dy
+                self.idle = False
 
         new_rect = self.rect.copy()
         new_rect.topleft = new_position
@@ -199,44 +223,36 @@ class Player(pygame.sprite.Sprite):
             self.position = new_position
             self.rect.topleft = self.position
 
-        self.rect.topleft = self.position
-
         if self.idle:
             self.update_idle_animation(delta_time)
         else:
             self.update_walk_animation(delta_time)
 
-        # Ajout de la gestion du tir
-        if keys[pygame.K_SPACE]:  # Tir avec la barre d'espace
+        if keys[pygame.K_SPACE]:
             self.shoot()
 
-
-        # Mise à jour des balles et détection des collisions
         for bullet in self.bullets:
             bullet.update(delta_time)
-            if npcs:  # Vérification que npcs existe
-                # Vérifier les collisions avec les NPCs
+            if npcs:
                 for npc in npcs:
                     if bullet.rect.colliderect(npc.rect):
-                        print("NPC hit!")  # Debug
-                        npc.kill()  # Tuer le NPC
-                        bullet.kill()  # Supprimer la balle
+                        npc.kill()
+                        bullet.kill()
                         break
 
-            # Supprimer les balles hors écran
             if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
                 bullet.kill()
 
     def update_idle_animation(self, delta_time):
         self.idle_timer += delta_time
-        if self.idle_timer >= (self.animation_speed + 0.1):  # Adjust the speed of the animation
+        if self.idle_timer >= self.animation_speed:
             self.idle_timer = 0
             self.idle_index = (self.idle_index + 1) % len(self.idle_images[self.direction])
             self.image = self.idle_images[self.direction][self.idle_index]
 
     def update_walk_animation(self, delta_time):
         self.walk_timer += delta_time
-        if self.walk_timer >= self.animation_speed:  # Adjust the speed of the animation
+        if self.walk_timer >= self.animation_speed:
             self.walk_timer = 0
             self.walk_index = (self.walk_index + 1) % len(self.walk_images[self.direction])
             self.image = self.walk_images[self.direction][self.walk_index]

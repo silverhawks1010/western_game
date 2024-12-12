@@ -2,6 +2,7 @@ import pygame
 import sys
 from scenes.menu import Menu
 from scenes.world import Map
+from scenes.character_selection import CharacterSelection
 
 # Initialize Pygame
 pygame.init()
@@ -12,22 +13,40 @@ pygame.display.set_caption("Western Game")
 
 # Create the menu
 menu = Menu(frame)
+character_selection = CharacterSelection(frame)
 map = None
+selected_character = None
 
 # Main game loop
 running = True
 in_menu = True
+in_character_selection = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
         if in_menu:
             action = menu.handle_event(event)
             if action == "start_game":
                 in_menu = False
-                map = Map(frame)
+                in_character_selection = True
             elif action == "quit":
                 running = False
+
+        elif in_character_selection:
+            character_action = character_selection.handle_event(event)
+            if character_action and character_action[0] == "character_selected":
+                selected_character = character_action[1]
+
+                # Validate selected character
+                if selected_character not in [0, 1, 2]:
+                    print("Invalid character selected. Defaulting to character 0.")
+                    selected_character = 0
+
+                in_character_selection = False
+                map = Map(frame, selected_character)
+
         else:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -35,18 +54,20 @@ while running:
 
     if in_menu:
         menu.display_menu()
+    elif in_character_selection:
+        character_selection.draw()
     else:
-        # Mise à jour du jeu
+        # Update the game
         map.update()
 
-        # Mise à jour et dessin des balles
+        # Update and draw bullets
         if hasattr(map, 'player'):
             map.player.bullets.update()
 
-        # Dessin de la map et des éléments
+        # Draw the map and elements
         map.draw()
 
-        # Dessin des balles
+        # Draw bullets
         if hasattr(map, 'player'):
             map.player.bullets.draw(frame)
 

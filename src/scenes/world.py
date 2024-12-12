@@ -3,13 +3,13 @@ import random
 import pygame
 import pytmx
 import pyscroll
-from src.entities.player import Player
-from src.entities.npc import NPC
-from src.scenes.combat import Combat
+from entities.player import Player
+from entities.npc import NPC
+from scenes.combat import Combat
 
 
 class Map:
-    def __init__(self, screen):
+    def __init__(self, screen, selected_character):
         self.screen = screen
         self.tmx_data = None
         self.map_layer = None
@@ -33,6 +33,7 @@ class Map:
         self.coin_image = pygame.image.load('assets/images/coins.png')
         self.coin_image = pygame.transform.scale(self.coin_image, (32, 32))
 
+        self.selected_character = selected_character  # Ajoutez ceci
         self.switch_map("western_map")
 
     def switch_map(self, map_name):
@@ -43,7 +44,7 @@ class Map:
         self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=7)
 
         self.collision_layer = self.tmx_data.get_layer_by_name('Collisions')
-        self.player = Player((4027,1972), self.collision_layer)
+        self.player = Player(self.selected_character, (4030, 1830), self.collision_layer)
 
         foreground_layer = self.tmx_data.get_layer_by_name('Level 2')
         foreground_layer_index = self.tmx_data.layers.index(foreground_layer)
