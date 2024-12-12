@@ -59,9 +59,9 @@ class Player(pygame.sprite.Sprite):
         self.max_magazine = 6  # Taille du chargeur
         self.total_ammo = 12  # Munitions totales
         self.is_reloading = False
-        self.reload_time = 7000  # 10 secondes en millisecondes
+        self.reload_time = 6000  # 10 secondes en millisecondes
         self.reload_start = 0
-        self.shot_cooldown = 1500
+        self.shot_cooldown = 800
 
         # Points et argent
         self.points = 0

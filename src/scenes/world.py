@@ -151,7 +151,6 @@ class Map:
             coord_text_rect = coord_text.get_rect(midleft=(100, 100))
             self.screen.blit(coord_text, coord_text_rect)
 
-
     def draw_hud(self):
         self.screen.blit(self.hud_image, (10, 10))
         hud_rect = self.hud_image.get_rect(topleft=(10, 10))
@@ -165,13 +164,42 @@ class Map:
         money_text_rect = money_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery))
         self.screen.blit(money_text, money_text_rect)
 
+        # Draw ammo icons
+        screen_width = self.screen.get_width()
+        ammo_spacing = 25  # Espacement entre les balles
+
+        # Afficher le texte des munitions totales
+        total_ammo_text = self.hud_font.render(f"/{self.player.total_ammo}", True, (255, 255, 255))
+        total_ammo_rect = total_ammo_text.get_rect(midright=(screen_width - 20, 30))
+        self.screen.blit(total_ammo_text, total_ammo_rect)
+
+        if self.player.is_reloading:
+            # Calculer combien de balles doivent être affichées pendant le rechargement
+            reload_progress = (pygame.time.get_ticks() - self.player.reload_start) / self.player.reload_time
+            bullets_to_show = int((reload_progress * self.player.max_magazine))
+            bullets_to_show = max(0, min(bullets_to_show, self.player.max_magazine))
+        else:
+            bullets_to_show = self.player.ammo_in_magazine
+
+        # Dessiner les balles de droite à gauche, en commençant après le texte des munitions totales
+        for i in range(self.player.max_magazine):
+            bullet_x = total_ammo_rect.left - 30 - (i * ammo_spacing)  # 30 pixels de marge entre le texte et les balles
+            bullet_y = 20
+
+            if i < bullets_to_show:
+                # Balle pleine
+                self.screen.blit(self.player.ammo_icon, (bullet_x, bullet_y))
+            else:
+                # Balle vide (grisée)
+                grayed_bullet = self.player.ammo_icon.copy()
+                grayed_bullet.fill((100, 100, 100), special_flags=pygame.BLEND_RGBA_MULT)
+                self.screen.blit(grayed_bullet, (bullet_x, bullet_y))
+
         # Draw stars (points)
         start_x = hud_rect.x + 20
         for i in range(self.player.points):
             star_x = start_x + i * (self.star_image.get_width() + 5)
             self.screen.blit(self.star_image, (star_x, hud_rect.y + 60))
-
-        # draw coordonnées
 
 
     def draw_collision_layer(self):
