@@ -25,6 +25,13 @@ class Map:
         self.battle_sound.set_volume(0.08)
         self.font = pygame.font.SysFont('Arial', 32)
         self.clock = pygame.time.Clock()
+        self.hud_image = pygame.image.load('assets/images/hud.png')
+        self.hud_image = pygame.transform.scale(self.hud_image, (200, 100))  # Adjust size as needed
+        self.hud_font = pygame.font.SysFont('Arial', 24)
+        self.star_image = pygame.image.load('assets/images/star.png')
+        self.star_image = pygame.transform.scale(self.star_image, (23, 23))
+        self.coin_image = pygame.image.load('assets/images/coins.png')
+        self.coin_image = pygame.transform.scale(self.coin_image, (32, 32))
 
         self.switch_map("western_map")
 
@@ -141,11 +148,32 @@ class Map:
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
-        # Afficher l'argent et le score
-        money_text = self.font.render(f'Argent: {self.player.money}', True, (255, 255, 255))
-        score_text = self.font.render(f'Score: {self.player.points}/5', True, (255, 255, 255))
-        self.screen.blit(money_text, (10, 10))
-        self.screen.blit(score_text, (10, 50))
+
+        self.screen.blit(self.hud_image, (10, 10))
+
+
+
+
+        # Center the text within the HUD
+        hud_rect = self.hud_image.get_rect(topleft=(10, 10))
+
+        agent_text = self.hud_font.render(f'{self.player.money}', True, (255, 255, 0))
+        agent_text_rect = agent_text.get_rect(center=(hud_rect.centerx, hud_rect.centery * 0.70))
+
+        coin_image_rect = self.coin_image.get_rect()
+        coin_image_rect.topleft = (hud_rect.centerx*0.25, hud_rect.centery * 0.45)
+        self.screen.blit(self.coin_image, coin_image_rect.topleft)
+
+
+        self.screen.blit(agent_text, agent_text_rect)
+
+        total_stars_width = self.player.points * 33  # 30 for star width + 5 for spacing
+        start_x = hud_rect.centerx - total_stars_width // 2.1
+        for i in range(self.player.points):
+            star_x = start_x + i * 33  # Adjust spacing as needed
+            star_y = hud_rect.top + 60
+            self.screen.blit(self.star_image, (star_x, star_y))
+
 
     def toggle_hitboxes(self):
         self.show_hitboxes = not self.show_hitboxes
