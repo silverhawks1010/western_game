@@ -23,8 +23,14 @@ class Player(pygame.sprite.Sprite):
         self.animation_speed = 0.02
         self.bullets = pygame.sprite.Group()
         self.last_shot = 0
-        self.shot_cooldown = 1500
+        self.shot_cooldown = 800
         self.collision_layer = collision_layer
+        self.ammo_in_magazine = 6  # Munitions dans le chargeur
+        self.max_magazine = 6  # Taille du chargeur
+        self.total_ammo = 12  # Munitions totales
+        self.is_reloading = False
+        self.reload_time = 7000  # 10 secondes en millisecondes
+        self.reload_start = 0
 
         self.points = 0
         self.money = 0
@@ -35,6 +41,21 @@ class Player(pygame.sprite.Sprite):
             'left': None,
             'right': None
         }
+
+        try:
+            self.reload_sound = pygame.mixer.Sound('assets/sounds/revolver_reload.mp3')
+            self.reload_sound.set_volume(0.1)
+            print("Reload sound loaded successfully")
+        except Exception as e:
+            print(f"Error loading reload sound: {e}")
+            self.reload_sound = None
+
+        try:
+            self.ammo_icon = pygame.image.load('assets/images/map/balle/balleGAUCHE.png').convert_alpha()
+            self.ammo_icon = pygame.transform.scale(self.ammo_icon, (20, 20))  # Ajuster la taille selon besoin
+        except Exception as e:
+            print(f"Error loading ammo icon: {e}")
+            self.ammo_icon = None
 
         try:
             self.bullet_sprites = {
@@ -63,16 +84,34 @@ class Player(pygame.sprite.Sprite):
 
     def shoot(self):
         current_time = pygame.time.get_ticks()
+
+        # Vérifier le rechargement
+        if self.is_reloading:
+            if current_time - self.reload_start >= self.reload_time:
+                self.ammo_in_magazine = min(self.max_magazine, self.total_ammo)
+                self.total_ammo -= self.ammo_in_magazine
+                self.is_reloading = False
+            else:
+                return  # Ne pas tirer pendant le rechargement
+
+        # Vérifier s'il reste des munitions
+        if self.ammo_in_magazine <= 0:
+            # Recharger si on a encore des munitions totales
+            if self.total_ammo > 0 and not self.is_reloading:
+                self.is_reloading = True
+                self.reload_start = current_time
+                if self.reload_sound:
+                    self.reload_sound.play()
+            return
+
         if current_time - self.last_shot > self.shot_cooldown:
             screen = pygame.display.get_surface()
             screen_center = (screen.get_width() // 2, screen.get_height() // 2)
 
             if self.bullet_sprites[self.direction]:
-                # Jouer le son de tir s'il est chargé
                 if self.shot_sound:
                     self.shot_sound.play()
 
-                # Ajuster l'offset selon la direction
                 offset = 30
                 spawn_pos = list(screen_center)
 
@@ -88,6 +127,14 @@ class Player(pygame.sprite.Sprite):
                 bullet = Bullet(spawn_pos, self.direction, self.bullet_sprites[self.direction])
                 self.bullets.add(bullet)
                 self.last_shot = current_time
+                self.ammo_in_magazine -= 1
+
+                # Recharger automatiquement si le chargeur est vide
+                if self.ammo_in_magazine == 0 and self.total_ammo > 0:
+                    self.is_reloading = True
+                    self.reload_start = current_time
+                    if self.reload_sound:
+                        self.reload_sound.play()
 
     def load_idle_images(self):
         idle_images = {'down': [], 'right': [], 'left': [], 'up': []}
@@ -197,3 +244,4 @@ class Player(pygame.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect.topleft)
         self.bullets.draw(surface)
+
