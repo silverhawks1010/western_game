@@ -292,9 +292,12 @@ class Player(pygame.sprite.Sprite):
 
     def update_bullets(self, delta_time, npcs):
         self.bullets.update(delta_time)
-        for bullet in self.bullets:
+        for bullet in list(self.bullets):
+            # Vérifier si la balle sort de l'écran
             if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
                 bullet.kill()
+
+            # Vérifier les collisions avec les NPCs
             if npcs:
                 npc_hit = pygame.sprite.spritecollideany(bullet, npcs)
                 if npc_hit:
