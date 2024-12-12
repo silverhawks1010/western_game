@@ -20,9 +20,9 @@ class Map:
         self.active_npc = None
         self.explo_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "background_sound_theme_chill.mp3"))
         self.battle_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "Theme_arcade.mp3"))
-        self.bg_channel = pygame.mixer.Channel(0)
-        self.explo_sound.set_volume(0.08)
-        self.battle_sound.set_volume(0.08)
+        self.bg_channel = pygame.mixer.Channel(3)
+        self.explo_sound.set_volume(1)
+        self.battle_sound.set_volume(1)
         self.font = pygame.font.SysFont('Arial', 32)
         self.clock = pygame.time.Clock()
         self.hud_image = pygame.image.load('assets/images/hud.png')
@@ -42,10 +42,23 @@ class Map:
         self.map_layer.zoom = 3
         self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=7)
 
-        self.player = Player((4027,1972))
-        self.group.add(self.player)
+        self.collision_layer = self.tmx_data.get_layer_by_name('Collisions')
+        self.player = Player((4027,1972), self.collision_layer)
+
+        foreground_layer = self.tmx_data.get_layer_by_name('Level 2')
+        foreground_layer_index = self.tmx_data.layers.index(foreground_layer)
+        print(f"Foreground layer index: {foreground_layer_index}")
+        self.group.add(self.player, layer=foreground_layer_index - 1)
 
         # Create NPCs with position as a tuple
+        npc1 = NPC(
+            position=(745, 583),
+            image_path='assets/images/sprite/npc/CowBoyIdle.png',
+            message="Prepare for battle!",
+            interaction_type='combat'
+        )
+        self.npcs.add(npc1)
+        self.group.add(npc1)
         for _ in range(5):
             npc_x = random.randint(0, self.map_layer.map_rect.width)
             npc_y = random.randint(0, self.map_layer.map_rect.height)
@@ -60,6 +73,7 @@ class Map:
 
         self.bg_channel.stop()
         self.bg_channel.play(self.explo_sound, loops=-1)
+
 
     def update(self):
         delta_time = self.clock.tick(60) / 1000.0
@@ -113,12 +127,17 @@ class Map:
         print(f"NPC removed. Remaining NPCs: {len(self.npcs)}")
 
     def start_combat(self, npc):
+        self.bg_channel.stop()
+        self.bg_channel.play(self.battle_sound, loops=-1)
+
         print("Combat: " + npc.message)
         combat = Combat(self.screen, self.player, npc)
         combat.run()
         self.current_combat = combat
+
         self.bg_channel.stop()
-        self.bg_channel.play(self.battle_sound, loops=-1)
+        self.bg_channel.play(self.explo_sound, loops=-1)
+
         self.remove_npc(npc)
 
     def handle_collisions(self):
@@ -133,6 +152,7 @@ class Map:
                 elif self.player.direction == 'down':
                     self.player.position.y = npc.hitbox.top - self.player.rect.height
                 self.player.rect.topleft = self.player.position
+
 
     def draw(self):
         self.group.draw(self.screen)

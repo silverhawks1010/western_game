@@ -259,6 +259,7 @@ class Menu:
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self.selected_option == 0:
+                    self.bg_channel.stop()
                     return "start_game"
                 elif self.selected_option == 1:
                     self.options_menu = OptionsMenu(self.screen)

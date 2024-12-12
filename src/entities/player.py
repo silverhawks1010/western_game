@@ -2,7 +2,7 @@ import pygame
 from src.entities.projectile import Bullet
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, position):
+    def __init__(self, position, collision_layer):
         super().__init__()
         self.idle_sprite_sheet = pygame.image.load('assets/images/sprite/mainchara/western_idle.png').convert_alpha()
         self.walk_sprite_sheet = pygame.image.load('assets/images/sprite/mainchara/western_walk.png').convert_alpha()
@@ -10,6 +10,8 @@ class Player(pygame.sprite.Sprite):
         self.walk_images = self.load_walk_images()
         self.image = self.idle_images['down'][0]
         self.rect = self.image.get_rect(center=position)
+        self.rect.height = int(self.rect.height * 0.1)  # Reduce height by 50%
+        self.rect.centery = position[1]
         self.position = pygame.Vector2(position)
         self.speed = 10
         self.idle = True
@@ -22,6 +24,7 @@ class Player(pygame.sprite.Sprite):
         self.bullets = pygame.sprite.Group()
         self.last_shot = 0
         self.shot_cooldown = 1500
+        self.collision_layer = collision_layer
 
         self.points = 0
         self.money = 0
@@ -51,6 +54,12 @@ class Player(pygame.sprite.Sprite):
         except Exception as e:
             print(f"Error loading shot sound: {e}")
             self.shot_sound = None
+
+    def check_collisions(self, rect):
+        for obj in self.collision_layer:
+            if obj.name == 'Collisions' and rect.colliderect(pygame.Rect(obj.x, obj.y, obj.width, obj.height)):
+                return True
+        return False
 
     def shoot(self):
         current_time = pygame.time.get_ticks()
@@ -87,7 +96,7 @@ class Player(pygame.sprite.Sprite):
         for direction, row in zip(idle_images.keys(), range(4)):
             for i in range(4):
                 frame = self.idle_sprite_sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width * 2, frame_height * 2))  # Scale the frame
+                frame = pygame.transform.scale(frame, (frame_width * 1.5, frame_height * 1.5))  # Scale the frame
                 idle_images[direction].append(frame)
         return idle_images
 
@@ -98,7 +107,7 @@ class Player(pygame.sprite.Sprite):
         for direction, row in zip(walk_images.keys(), range(4)):
             for i in range(4):
                 frame = self.walk_sprite_sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width * 2, frame_height * 2))  # Scale the frame
+                frame = pygame.transform.scale(frame, (frame_width * 1.5, frame_height * 1.5))  # Scale the frame
                 walk_images[direction].append(frame)
         return walk_images
 
@@ -117,25 +126,33 @@ class Player(pygame.sprite.Sprite):
             self.speed = 50  # Speed in pixels per second
             self.animation_speed = 0.3  # Animation speed in seconds per frame
 
+        new_position = self.position.copy()
+
         if keys[pygame.K_LEFT] or keys[pygame.K_q]:
-            self.position.x -= self.speed * delta_time
+            new_position.x -= self.speed * delta_time
             self.idle = False
             self.direction = 'left'
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.position.x += self.speed * delta_time
+            new_position.x += self.speed * delta_time
             self.idle = False
             self.direction = 'right'
         if keys[pygame.K_UP] or keys[pygame.K_z]:
-            self.position.y -= self.speed * delta_time
+            new_position.y -= self.speed * delta_time
             self.idle = False
             self.direction = 'up'
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.position.y += self.speed * delta_time
+            new_position.y += self.speed * delta_time
             self.idle = False
             self.direction = 'down'
 
-        self.rect.topleft = self.position  # Update rect position based on the floating-point position
+        new_rect = self.rect.copy()
+        new_rect.topleft = new_position
 
+        if not self.check_collisions(new_rect):
+            self.position = new_position
+            self.rect.topleft = self.position
+
+        self.rect.topleft = self.position
 
         if self.idle:
             self.update_idle_animation(delta_time)
