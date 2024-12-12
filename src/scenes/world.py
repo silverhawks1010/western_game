@@ -46,13 +46,9 @@ class Map:
 
         # Collision layer
         self.collision_layer = self.tmx_data.get_layer_by_name('Collisions')
-<<<<<<< HEAD
-=======
-        self.player = Player(self.selected_character, (4030, 1830), self.collision_layer)
->>>>>>> e19acbf6261ab4a7a939277b6338a502027fe58d
 
         # Player
-        self.player = Player((791, 721), self.collision_layer)
+        self.player = Player(self.selected_character, (791, 721), self.collision_layer)
         self.group.add(self.player, layer=1)
 
         # NPCs
@@ -140,40 +136,14 @@ class Map:
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
-<<<<<<< HEAD
         # Draw HUD
         self.draw_hud()
-=======
-
-        self.screen.blit(self.hud_image, (10, 10))
-
-
-
-
-        # Center the text within the HUD
-        hud_rect = self.hud_image.get_rect(topleft=(10, 10))
-
-        agent_text = self.hud_font.render(f'{self.player.money}', True, (255, 255, 0))
-        agent_text_rect = agent_text.get_rect(center=(hud_rect.centerx, hud_rect.centery * 0.70))
-
-        coin_image_rect = self.coin_image.get_rect()
-        coin_image_rect.topleft = (hud_rect.centerx*0.25, hud_rect.centery * 0.45)
-        self.screen.blit(self.coin_image, coin_image_rect.topleft)
-        self.screen.blit(agent_text, agent_text_rect)
-
-        total_stars_width = self.player.points * 33  # 30 for star width + 5 for spacing
-        start_x = hud_rect.centerx - total_stars_width // 2.1
-        for i in range(self.player.points):
-            star_x = start_x + i * 33  # Adjust spacing as needed
-            star_y = hud_rect.top + 60
-            self.screen.blit(self.star_image, (star_x, star_y))
->>>>>>> e19acbf6261ab4a7a939277b6338a502027fe58d
 
         if self.dev_mode:
             self.draw_hitboxes()
             self.draw_collision_layer()
 
-<<<<<<< HEAD
+
     def draw_hud(self):
         self.screen.blit(self.hud_image, (10, 10))
         hud_rect = self.hud_image.get_rect(topleft=(10, 10))
@@ -208,55 +178,6 @@ class Map:
         for npc in self.npcs:
             pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
         pygame.draw.rect(self.screen, (0, 255, 0), self.player.rect, 2)
-=======
-            # Afficher les icônes de balles
-        ammo_start_x = self.screen.get_width() - 180
-        ammo_start_y = 20
-        spacing = 20
-
-        if self.player.is_reloading:
-            # Calculer combien de balles doivent être affichées pendant le rechargement
-            current_time = pygame.time.get_ticks()
-            reload_progress = (current_time - self.player.reload_start) / self.player.reload_time
-            bullets_to_reload = self.player.max_magazine - self.player.ammo_in_magazine
-            bullets_reloaded = min(bullets_to_reload,
-                                   int(reload_progress * bullets_to_reload))
-
-            # Afficher les balles actuelles + les balles en cours de rechargement
-            for i in range(self.player.max_magazine):
-                icon_pos = (ammo_start_x + (i * spacing), ammo_start_y)
-
-                if i < self.player.ammo_in_magazine:
-                    # Balles déjà dans le chargeur
-                    self.screen.blit(self.player.ammo_icon, icon_pos)
-                elif i < self.player.ammo_in_magazine + bullets_reloaded:
-                    # Balles qui apparaissent progressivement
-                    alpha = min(255, int((reload_progress * 255)))
-                    fading_icon = self.player.ammo_icon.copy()
-                    fading_icon.set_alpha(alpha)
-                    self.screen.blit(fading_icon, icon_pos)
-                else:
-                    # Emplacements vides
-                    grey_icon = self.player.ammo_icon.copy()
-                    grey_icon.fill((100, 100, 100, 128), special_flags=pygame.BLEND_RGBA_MULT)
-                    self.screen.blit(grey_icon, icon_pos)
-        else:
-            # Affichage normal des balles hors rechargement
-            for i in range(self.player.max_magazine):
-                icon_pos = (ammo_start_x + (i * spacing), ammo_start_y)
-                if i < self.player.ammo_in_magazine:
-                    self.screen.blit(self.player.ammo_icon, icon_pos)
-                else:
-                    grey_icon = self.player.ammo_icon.copy()
-                    grey_icon.fill((100, 100, 100, 128), special_flags=pygame.BLEND_RGBA_MULT)
-                    self.screen.blit(grey_icon, icon_pos)
-
-        # Afficher le nombre total de munitions
-        total_ammo_text = self.hud_font.render(f"/{self.player.total_ammo}", True, (255, 255, 255))
-        self.screen.blit(total_ammo_text, (ammo_start_x + (self.player.max_magazine * spacing) + 5, ammo_start_y))
-
-
->>>>>>> e19acbf6261ab4a7a939277b6338a502027fe58d
 
     def toggle_hitboxes(self):
         self.dev_mode = not self.dev_mode
