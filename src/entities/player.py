@@ -33,6 +33,10 @@ class Player(pygame.sprite.Sprite):
         # Initialisation de l'image et du rectangle
         self.image = self.idle_images['down'][0]
         self.rect = self.image.get_rect(center=position)
+        self.rect.width = 20
+        self.rect.height = 20
+        self.rect.centery += 40
+        self.rect.centerx += 20
         self.position = pygame.Vector2(position)
 
         # Variables de mouvement et d'animation
@@ -105,6 +109,15 @@ class Player(pygame.sprite.Sprite):
             print(f"Error loading shot sound: {e}")
             return None
 
+    def load_shot_sound(self):
+        try:
+            shot_sound = pygame.mixer.Sound('assets/sounds/gunshot1.wav')
+            shot_sound.set_volume(0.1)
+            return shot_sound
+        except Exception as e:
+            print(f"Error loading shot sound: {e}")
+            return None
+
     def load_idle_images(self):
         return self.load_images_from_sheet(self.idle_sprite_sheet)
 
@@ -125,6 +138,16 @@ class Player(pygame.sprite.Sprite):
                 images[direction].append(frame)
 
         return images
+
+    def handle_animation(self, delta_time):
+        if self.idle:
+            self.update_idle_animation(delta_time)
+        else:
+            self.update_walk_animation(delta_time)
+
+    def handle_shooting(self):
+        if pygame.key.get_pressed()[pygame.K_SPACE]:
+            self.shoot()
 
     def check_collisions(self, rect):
         for obj in self.collision_layer:
