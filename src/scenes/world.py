@@ -15,7 +15,7 @@ class Map:
         self.group = None
         self.player = None
         self.npcs = pygame.sprite.Group()
-        self.dev_mode = True
+        self.dev_mode = False
         self.active_npc = None
 
         # Clock for delta_time
@@ -147,6 +147,10 @@ class Map:
             self.draw_hitboxes()
             self.draw_collision_layer()
 
+            coord_text = self.hud_font.render(f'{self.player.hitbox.topleft}', True, (255, 255, 0))
+            coord_text_rect = coord_text.get_rect(midleft=(100, 100))
+            self.screen.blit(coord_text, coord_text_rect)
+
 
     def draw_hud(self):
         self.screen.blit(self.hud_image, (10, 10))
@@ -168,9 +172,7 @@ class Map:
             self.screen.blit(self.star_image, (star_x, hud_rect.y + 60))
 
         # draw coordonnées
-        coord_text = self.hud_font.render(f'{self.player.hitbox.topleft}', True, (255, 255, 0))
-        coord_text_rect = coord_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery+30))
-        self.screen.blit(coord_text, coord_text_rect)
+
 
     def draw_collision_layer(self):
         for obj in self.collision_layer:
