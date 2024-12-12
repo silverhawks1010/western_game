@@ -42,8 +42,7 @@ class Map:
         self.map_layer.zoom = 3
         self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=7)
 
-        map_center = (self.map_layer.map_rect.width // 2, self.map_layer.map_rect.height // 2)
-        self.player = Player(map_center)
+        self.player = Player((4027,1972))
         self.group.add(self.player)
 
         # Create NPCs with position as a tuple
@@ -140,11 +139,7 @@ class Map:
 
         # Dessiner les balles
         self.player.bullets.draw(self.screen)
-
-        if self.show_hitboxes:
-            for npc in self.npcs:
-                pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
-
+        
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
@@ -173,6 +168,9 @@ class Map:
             star_x = start_x + i * 33  # Adjust spacing as needed
             star_y = hud_rect.top + 60
             self.screen.blit(self.star_image, (star_x, star_y))
+
+        player_coords_text = self.hud_font.render(f'Coords: ({int(self.player.position.x)}, {int(self.player.position.y)})', True, (255, 255, 255))
+        self.screen.blit(player_coords_text, (10, hud_rect.bottom + 10))
 
 
     def toggle_hitboxes(self):
