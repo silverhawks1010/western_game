@@ -3,9 +3,9 @@ import random
 import pygame
 import pytmx
 import pyscroll
-from entities.player import Player
-from entities.npc import NPC
-from scenes.combat import Combat
+from src.entities.player import Player
+from src.entities.npc import NPC
+from src.scenes.combat import Combat
 
 class Map:
     def __init__(self, screen, selected_character):
