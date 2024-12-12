@@ -102,13 +102,13 @@ class Map:
                 self.remove_npc(npc_hit)
                 self.player.points += 1
 
-        self.group.center(self.player.rect.center)
+        self.group.center(self.player.hitbox.center)
 
     def handle_interactions(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_e]:
             for npc in self.npcs:
-                if self.player.rect.colliderect(npc.rect):
+                if self.player.hitbox.colliderect(npc.rect):
                     if npc.interaction_type == 'combat':
                         self.start_combat(npc)
 
@@ -164,7 +164,7 @@ class Map:
             self.screen.blit(self.star_image, (star_x, hud_rect.y + 60))
 
         # draw coordonnées
-        coord_text = self.hud_font.render(f'{self.player.rect.topleft}', True, (255, 255, 0))
+        coord_text = self.hud_font.render(f'{self.player.hitbox.topleft}', True, (255, 255, 0))
         coord_text_rect = coord_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery+30))
         self.screen.blit(coord_text, coord_text_rect)
 
@@ -177,7 +177,7 @@ class Map:
     def draw_hitboxes(self):
         for npc in self.npcs:
             pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
-        pygame.draw.rect(self.screen, (0, 255, 0), self.player.rect, 2)
+        pygame.draw.rect(self.screen, (0, 255, 0), self.player.hitbox, 2)
 
     def toggle_hitboxes(self):
         self.dev_mode = not self.dev_mode

@@ -1,7 +1,6 @@
 import pygame
 from entities.projectile import Bullet
 
-
 class Player(pygame.sprite.Sprite):
     def __init__(self, character_index, position, collision_layer):
         super().__init__()
@@ -33,11 +32,10 @@ class Player(pygame.sprite.Sprite):
         # Initialisation de l'image et du rectangle
         self.image = self.idle_images['down'][0]
         self.rect = self.image.get_rect(center=position)
-        self.rect.width = 20
-        self.rect.height = 20
-        self.rect.centery += 40
-        self.rect.centerx += 20
         self.position = pygame.Vector2(position)
+
+        self.hitbox = pygame.Rect(0, 0, 20, 20)
+        self.hitbox.center = self.rect.center
 
         # Variables de mouvement et d'animation
         self.speed = 50
@@ -217,7 +215,7 @@ class Player(pygame.sprite.Sprite):
             for i in range(4):
                 frame = self.idle_sprite_sheet.subsurface(
                     pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width * 2, frame_height * 2))
+                frame = pygame.transform.scale(frame, (frame_width * 1.5, frame_height * 1.5))
                 idle_images[direction].append(frame)
         return idle_images
 
@@ -229,7 +227,7 @@ class Player(pygame.sprite.Sprite):
             for i in range(4):
                 frame = self.walk_sprite_sheet.subsurface(
                     pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
-                frame = pygame.transform.scale(frame, (frame_width * 2, frame_height * 2))
+                frame = pygame.transform.scale(frame, (frame_width * 1.5, frame_height * 1.5))
                 walk_images[direction].append(frame)
         return walk_images
 
@@ -238,12 +236,7 @@ class Player(pygame.sprite.Sprite):
         self.handle_animation(delta_time)
         self.handle_shooting()
         self.update_bullets(delta_time, npcs)
-
-    def update(self, delta_time, npcs=None):
-        self.handle_movement(delta_time)
-        self.handle_animation(delta_time)
-        self.handle_shooting()
-        self.update_bullets(delta_time, npcs)
+        self.hitbox.center = self.rect.center
 
     def handle_movement(self, delta_time):
         keys = pygame.key.get_pressed()
@@ -274,7 +267,7 @@ class Player(pygame.sprite.Sprite):
             self.direction = 'down'
             self.idle = False
 
-        new_rect = self.rect.copy()
+        new_rect = self.hitbox.copy()
         new_rect.center = new_position
         if not self.check_collisions(new_rect):
             self.position = new_position
@@ -307,6 +300,5 @@ class Player(pygame.sprite.Sprite):
                     self.points += 1
 
     def draw(self, surface):
-        surface.blit(self.image, self.rect.center)
+        surface.blit(self.image, self.rect.topleft)
         self.bullets.draw(surface)
-
