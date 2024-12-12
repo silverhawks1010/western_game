@@ -3,5 +3,9 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.10 (western_game) (2)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (western_game)" project-jdk-type="Python SDK" />
+<<<<<<< Updated upstream
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (western_game)" project-jdk-type="Python SDK" />
+=======
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12" project-jdk-type="Python SDK" />
+>>>>>>> Stashed changes
 </project>
