@@ -42,14 +42,18 @@ class Map:
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.BufferedRenderer(map_data, self.screen.get_size())
         self.map_layer.zoom = 3
-        self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=7)
+        self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=1)
 
         # Collision layer
         self.collision_layer = self.tmx_data.get_layer_by_name('Collisions')
 
         # Player
-        self.player = Player(self.selected_character, (791, 721), self.collision_layer)
-        self.group.add(self.player, layer=1)
+
+        self.player = Player(self.selected_character, (4000, 3000), self.collision_layer)
+
+        foreground_layer = self.tmx_data.get_layer_by_name('Level 2')
+        foreground_layer_index = self.tmx_data.layers.index(foreground_layer)
+        self.group.add(self.player, layer=foreground_layer_index-1)
 
         # NPCs
         self.spawn_npcs()
