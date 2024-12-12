@@ -7,7 +7,6 @@ from entities.player import Player
 from entities.npc import NPC
 from scenes.combat import Combat
 
-
 class Map:
     def __init__(self, screen, selected_character):
         self.screen = screen
@@ -18,20 +17,22 @@ class Map:
         self.npcs = pygame.sprite.Group()
         self.dev_mode = True
         self.active_npc = None
+
+        # Clock for delta_time
+        self.clock = pygame.time.Clock()
+
+        # Sounds
         self.explo_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "background_sound_theme_chill.mp3"))
         self.battle_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "Theme_arcade.mp3"))
         self.bg_channel = pygame.mixer.Channel(3)
         self.explo_sound.set_volume(1)
         self.battle_sound.set_volume(1)
-        self.font = pygame.font.SysFont('Arial', 32)
-        self.clock = pygame.time.Clock()
-        self.hud_image = pygame.image.load('assets/images/hud.png')
-        self.hud_image = pygame.transform.scale(self.hud_image, (200, 100))  # Adjust size as needed
+
+        # HUD
+        self.hud_image = pygame.transform.scale(pygame.image.load('assets/images/hud.png'), (200, 100))
         self.hud_font = pygame.font.SysFont('Arial', 24)
-        self.star_image = pygame.image.load('assets/images/star.png')
-        self.star_image = pygame.transform.scale(self.star_image, (23, 23))
-        self.coin_image = pygame.image.load('assets/images/coins.png')
-        self.coin_image = pygame.transform.scale(self.coin_image, (32, 32))
+        self.star_image = pygame.transform.scale(pygame.image.load('assets/images/star.png'), (23, 23))
+        self.coin_image = pygame.transform.scale(pygame.image.load('assets/images/coins.png'), (32, 32))
 
         self.selected_character = selected_character  # Ajoutez ceci
         self.switch_map("western_map")
@@ -43,15 +44,25 @@ class Map:
         self.map_layer.zoom = 3
         self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=7)
 
+        # Collision layer
         self.collision_layer = self.tmx_data.get_layer_by_name('Collisions')
+<<<<<<< HEAD
+=======
         self.player = Player(self.selected_character, (4030, 1830), self.collision_layer)
+>>>>>>> e19acbf6261ab4a7a939277b6338a502027fe58d
 
-        foreground_layer = self.tmx_data.get_layer_by_name('Level 2')
-        foreground_layer_index = self.tmx_data.layers.index(foreground_layer)
-        print(f"Foreground layer index: {foreground_layer_index}")
-        self.group.add(self.player, layer=foreground_layer_index - 1)
+        # Player
+        self.player = Player((791, 721), self.collision_layer)
+        self.group.add(self.player, layer=1)
 
-        # Create NPCs with position as a tuple
+        # NPCs
+        self.spawn_npcs()
+
+        # Background music
+        self.bg_channel.stop()
+        self.bg_channel.play(self.explo_sound, loops=-1)
+
+    def spawn_npcs(self):
         npc1 = NPC(
             position=(745, 583),
             image_path='assets/images/sprite/npc/CowBoyIdle.png',
@@ -60,6 +71,7 @@ class Map:
         )
         self.npcs.add(npc1)
         self.group.add(npc1)
+
         for _ in range(5):
             npc_x = random.randint(0, self.map_layer.map_rect.width)
             npc_y = random.randint(0, self.map_layer.map_rect.height)
@@ -72,98 +84,66 @@ class Map:
             self.npcs.add(npc)
             self.group.add(npc)
 
-        self.bg_channel.stop()
-        self.bg_channel.play(self.explo_sound, loops=-1)
-
-
     def update(self):
         delta_time = self.clock.tick(60) / 1000.0
 
-        # Mise à jour du joueur avec le groupe de NPCs
+        # Player and NPC updates
         self.player.update(delta_time, self.npcs)
-
-        # Vérifier les collisions balles-NPCs
-        for bullet in self.player.bullets:
-            bullet.update(delta_time)
-            npc_hit = pygame.sprite.spritecollideany(bullet, self.npcs)
-            if npc_hit:
-                print("NPC hit by bullet!")
-                bullet.kill()
-                self.remove_npc(npc_hit)
-                self.player.points += 1  # Ajouter des points quand un NPC est tué
-
         self.npcs.update(delta_time)
-        self.handle_interactions()
-        self.handle_collisions()
-        self.group.update(delta_time)
-        self.group.center(self.player.rect.center)
 
-        # Dessiner les balles
+        # Handle interactions and collisions
+        self.handle_interactions()
+
+        # Update bullets
         self.player.bullets.update(delta_time)
-        # Supprimer les balles hors écran
         for bullet in self.player.bullets:
             if not self.screen.get_rect().colliderect(bullet.rect):
                 bullet.kill()
+
+            npc_hit = pygame.sprite.spritecollideany(bullet, self.npcs)
+            if npc_hit:
+                bullet.kill()
+                self.remove_npc(npc_hit)
+                self.player.points += 1
+
+        self.group.center(self.player.rect.center)
 
     def handle_interactions(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_e]:
             for npc in self.npcs:
                 if self.player.rect.colliderect(npc.rect):
-                    if npc.interaction_type == 'dialog':
-                        self.active_npc = npc
-                    elif npc.interaction_type == 'qte':
-                        self.start_qte(npc)
-                    elif npc.interaction_type == 'combat':
+                    if npc.interaction_type == 'combat':
                         self.start_combat(npc)
-        else:
-            self.active_npc = None
-
-    def start_qte(self, npc):
-        print("Quick Time Event: " + npc.message)
 
     def remove_npc(self, npc):
         self.npcs.remove(npc)
         self.group.remove(npc)
-        print(f"NPC removed. Remaining NPCs: {len(self.npcs)}")
 
     def start_combat(self, npc):
         self.bg_channel.stop()
         self.bg_channel.play(self.battle_sound, loops=-1)
 
-        print("Combat: " + npc.message)
         combat = Combat(self.screen, self.player, npc)
         combat.run()
-        self.current_combat = combat
 
         self.bg_channel.stop()
         self.bg_channel.play(self.explo_sound, loops=-1)
 
         self.remove_npc(npc)
 
-    def handle_collisions(self):
-        for npc in self.npcs:
-            if self.player.rect.colliderect(npc.hitbox):
-                if self.player.direction == 'left':
-                    self.player.position.x = npc.hitbox.right
-                elif self.player.direction == 'right':
-                    self.player.position.x = npc.hitbox.left - self.player.rect.width
-                elif self.player.direction == 'up':
-                    self.player.position.y = npc.hitbox.bottom
-                elif self.player.direction == 'down':
-                    self.player.position.y = npc.hitbox.top - self.player.rect.height
-                self.player.rect.topleft = self.player.position
-
-
     def draw(self):
         self.group.draw(self.screen)
-
-        # Dessiner les balles
         self.player.bullets.draw(self.screen)
 
+        # Draw NPC dialog
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
+<<<<<<< HEAD
+        # Draw HUD
+        self.draw_hud()
+=======
 
         self.screen.blit(self.hud_image, (10, 10))
 
@@ -187,11 +167,48 @@ class Map:
             star_x = start_x + i * 33  # Adjust spacing as needed
             star_y = hud_rect.top + 60
             self.screen.blit(self.star_image, (star_x, star_y))
+>>>>>>> e19acbf6261ab4a7a939277b6338a502027fe58d
 
         if self.dev_mode:
-            player_coords_text = self.hud_font.render(f'Coords: ({int(self.player.position.x)}, {int(self.player.position.y)})', True, (255, 255, 255))
-            self.screen.blit(player_coords_text, (10, hud_rect.bottom + 10))
+            self.draw_hitboxes()
+            self.draw_collision_layer()
 
+<<<<<<< HEAD
+    def draw_hud(self):
+        self.screen.blit(self.hud_image, (10, 10))
+        hud_rect = self.hud_image.get_rect(topleft=(10, 10))
+
+        # Draw coins
+        coin_image_rect = self.coin_image.get_rect()
+        coin_image_rect.topleft = (hud_rect.x + 20, hud_rect.y + 20)
+        self.screen.blit(self.coin_image, coin_image_rect.topleft)
+
+        money_text = self.hud_font.render(f'{self.player.money}', True, (255, 255, 0))
+        money_text_rect = money_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery))
+        self.screen.blit(money_text, money_text_rect)
+
+        # Draw stars (points)
+        start_x = hud_rect.x + 20
+        for i in range(self.player.points):
+            star_x = start_x + i * (self.star_image.get_width() + 5)
+            self.screen.blit(self.star_image, (star_x, hud_rect.y + 60))
+
+        # draw coordonnées
+        coord_text = self.hud_font.render(f'{self.player.rect.topleft}', True, (255, 255, 0))
+        coord_text_rect = coord_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery+30))
+        self.screen.blit(coord_text, coord_text_rect)
+
+    def draw_collision_layer(self):
+        for obj in self.collision_layer:
+            if obj.name == 'Collisions':
+                rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
+                pygame.draw.rect(self.screen, (0, 0, 255), rect, 2) # Draw the collision box in blue
+
+    def draw_hitboxes(self):
+        for npc in self.npcs:
+            pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
+        pygame.draw.rect(self.screen, (0, 255, 0), self.player.rect, 2)
+=======
             # Afficher les icônes de balles
         ammo_start_x = self.screen.get_width() - 180
         ammo_start_y = 20
@@ -239,6 +256,7 @@ class Map:
         self.screen.blit(total_ammo_text, (ammo_start_x + (self.player.max_magazine * spacing) + 5, ammo_start_y))
 
 
+>>>>>>> e19acbf6261ab4a7a939277b6338a502027fe58d
 
     def toggle_hitboxes(self):
-        self.show_hitboxes = not self.show_hitboxes
+        self.dev_mode = not self.dev_mode

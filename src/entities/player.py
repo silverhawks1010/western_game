@@ -74,6 +74,10 @@ class Player(pygame.sprite.Sprite):
             print(f"Error loading reload sound: {e}")
             self.reload_sound = None
 
+        # Sounds
+        self.shot_sound = self.load_shot_sound()
+
+    def load_bullet_sprites(self):
         try:
             self.ammo_icon = pygame.image.load('assets/images/map/balle/balleGAUCHE.png').convert_alpha()
             self.ammo_icon = pygame.transform.scale(self.ammo_icon, (20, 20))  # Ajuster la taille selon besoin
@@ -88,9 +92,9 @@ class Player(pygame.sprite.Sprite):
                 'left': pygame.image.load('assets/images/map/balle/balleGAUCHE.png').convert_alpha(),
                 'right': pygame.image.load('assets/images/map/balle/balleDROITE.png').convert_alpha()
             }
-            print("Bullet sprites loaded successfully")
         except Exception as e:
             print(f"Error loading bullet sprites: {e}")
+            return {'up': None, 'down': None, 'left': None, 'right': None}
 
         # Chargement du son de tir
         try:
@@ -99,7 +103,28 @@ class Player(pygame.sprite.Sprite):
             print("Shot sound loaded successfully")
         except Exception as e:
             print(f"Error loading shot sound: {e}")
-            self.shot_sound = None
+            return None
+
+    def load_idle_images(self):
+        return self.load_images_from_sheet(self.idle_sprite_sheet)
+
+    def load_walk_images(self):
+        return self.load_images_from_sheet(self.walk_sprite_sheet)
+
+    def load_images_from_sheet(self, sprite_sheet):
+        directions = ['down', 'right', 'left', 'up']
+        images = {direction: [] for direction in directions}
+        frame_width = sprite_sheet.get_width() // 4
+        frame_height = sprite_sheet.get_height() // 4
+
+        for direction, row in zip(directions, range(4)):
+            for i in range(4):
+                frame = sprite_sheet.subsurface(
+                    pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height))
+                frame = pygame.transform.scale(frame, (frame_width * 1.5, frame_height * 1.5))
+                images[direction].append(frame)
+
+        return images
 
     def check_collisions(self, rect):
         for obj in self.collision_layer:
@@ -186,15 +211,21 @@ class Player(pygame.sprite.Sprite):
         return walk_images
 
     def update(self, delta_time, npcs=None):
+        self.handle_movement(delta_time)
+        self.handle_animation(delta_time)
+        self.handle_shooting()
+        self.update_bullets(delta_time, npcs)
+
+    def handle_movement(self, delta_time):
         keys = pygame.key.get_pressed()
-        self.idle = True
+        new_position = self.position.copy()
 
         if keys[pygame.K_LSHIFT]:
-            self.speed = 100  # Speed in pixels per second
-            self.animation_speed = 0.2  # Animation speed in seconds per frame
+            self.speed = 100
+            self.animation_speed = 0.1
         else:
-            self.speed = 50  # Speed in pixels per second
-            self.animation_speed = 0.3  # Animation speed in seconds per frame
+            self.speed = 50
+            self.animation_speed = 0.3
 
         directions = {
             pygame.K_LEFT: ('left', -self.speed * delta_time, 0),
@@ -217,11 +248,10 @@ class Player(pygame.sprite.Sprite):
                 self.idle = False
 
         new_rect = self.rect.copy()
-        new_rect.topleft = new_position
-
+        new_rect.center = new_position
         if not self.check_collisions(new_rect):
             self.position = new_position
-            self.rect.topleft = self.position
+            self.rect.center = self.position
 
         if self.idle:
             self.update_idle_animation(delta_time)
@@ -257,7 +287,19 @@ class Player(pygame.sprite.Sprite):
             self.walk_index = (self.walk_index + 1) % len(self.walk_images[self.direction])
             self.image = self.walk_images[self.direction][self.walk_index]
 
+    def update_bullets(self, delta_time, npcs):
+        self.bullets.update(delta_time)
+        for bullet in self.bullets:
+            if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
+                bullet.kill()
+            if npcs:
+                npc_hit = pygame.sprite.spritecollideany(bullet, npcs)
+                if npc_hit:
+                    bullet.kill()
+                    npc_hit.kill()
+                    self.points += 1
+
     def draw(self, surface):
-        surface.blit(self.image, self.rect.topleft)
+        surface.blit(self.image, self.rect.center)
         self.bullets.draw(surface)
 
