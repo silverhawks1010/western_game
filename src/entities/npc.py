@@ -16,6 +16,27 @@ class NPC(pygame.sprite.Sprite):
         self.hitbox = self.rect.inflate(-self.rect.width * 0.90, -self.rect.height * 0.90)
         self.font = pygame.font.Font(None, 24)  # Font for the dialog text
 
+        try:
+            self.image = pygame.image.load('assets/images/sprite/npc/npc.png').convert_alpha()
+        except:
+            self.image = pygame.Surface((32, 48))
+            self.image.fill((255, 0, 0))  # Red rectangle as fallback
+
+        self.rect = self.image.get_rect(center=position)
+
+        # Death animation
+        self.dying = False
+        self.death_animation_frame = 0
+        self.death_animation_timer = 0
+        self.death_animation_speed = 0.1
+
+        # Death sound
+        try:
+            self.death_sound = pygame.mixer.Sound('assets/sounds/npc_death.wav')
+            self.death_sound.set_volume(0.2)
+        except:
+            self.death_sound = None
+
     def load_frames(self):
         frames = []
         frame_width = self.sprite_sheet.get_width() // 7
@@ -25,7 +46,7 @@ class NPC(pygame.sprite.Sprite):
             frames.append(frame)
         return frames
 
-    def update(self):
+    def update(self, delta_time):
         now = pygame.time.get_ticks()
         if now - self.last_update > self.animation_speed:
             self.last_update = now
@@ -39,3 +60,9 @@ class NPC(pygame.sprite.Sprite):
         text_rect.y -= 10  # Adjust position above the NPC
         pygame.draw.rect(screen, (0, 0, 0), text_rect.inflate(10, 10))  # Background for the text
         screen.blit(text_surface, text_rect)
+
+    def kill(self):
+        if self.death_sound:
+            self.death_sound.play()
+        print("NPC killed!")  # Debug
+        super().kill()
