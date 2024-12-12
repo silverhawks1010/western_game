@@ -16,7 +16,7 @@ class Map:
         self.group = None
         self.player = None
         self.npcs = pygame.sprite.Group()
-        self.show_hitboxes = True
+        self.dev_mode = True
         self.active_npc = None
         self.explo_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "background_sound_theme_chill.mp3"))
         self.battle_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "Theme_arcade.mp3"))
@@ -139,7 +139,7 @@ class Map:
 
         # Dessiner les balles
         self.player.bullets.draw(self.screen)
-        
+
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
@@ -169,8 +169,9 @@ class Map:
             star_y = hud_rect.top + 60
             self.screen.blit(self.star_image, (star_x, star_y))
 
-        player_coords_text = self.hud_font.render(f'Coords: ({int(self.player.position.x)}, {int(self.player.position.y)})', True, (255, 255, 255))
-        self.screen.blit(player_coords_text, (10, hud_rect.bottom + 10))
+        if self.dev_mode:
+            player_coords_text = self.hud_font.render(f'Coords: ({int(self.player.position.x)}, {int(self.player.position.y)})', True, (255, 255, 255))
+            self.screen.blit(player_coords_text, (10, hud_rect.bottom + 10))
 
 
     def toggle_hitboxes(self):
