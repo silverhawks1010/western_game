@@ -47,7 +47,7 @@ class Player(pygame.sprite.Sprite):
         self.idle_timer = 0
         self.walk_index = 0
         self.walk_timer = 0
-        self.animation_speed = 0.3  # En secondes par frame
+        self.animation_speed = 0.2  # En secondes par frame
 
         # Couche de collision
         self.collision_layer = collision_layer
@@ -250,9 +250,16 @@ class Player(pygame.sprite.Sprite):
         self.handle_shooting()
         self.update_bullets(delta_time, npcs)
 
+    def update(self, delta_time, npcs=None):
+        self.handle_movement(delta_time)
+        self.handle_animation(delta_time)
+        self.handle_shooting()
+        self.update_bullets(delta_time, npcs)
+
     def handle_movement(self, delta_time):
         keys = pygame.key.get_pressed()
         new_position = self.position.copy()
+        self.idle = True
 
         if keys[pygame.K_LSHIFT]:
             self.speed = 100
@@ -261,51 +268,28 @@ class Player(pygame.sprite.Sprite):
             self.speed = 50
             self.animation_speed = 0.3
 
-        directions = {
-            pygame.K_LEFT: ('left', -self.speed * delta_time, 0),
-            pygame.K_q: ('left', -self.speed * delta_time, 0),
-            pygame.K_RIGHT: ('right', self.speed * delta_time, 0),
-            pygame.K_d: ('right', self.speed * delta_time, 0),
-            pygame.K_UP: ('up', 0, -self.speed * delta_time),
-            pygame.K_z: ('up', 0, -self.speed * delta_time),
-            pygame.K_DOWN: ('down', 0, self.speed * delta_time),
-            pygame.K_s: ('down', 0, self.speed * delta_time)
-        }
-
-        new_position = self.position.copy()
-
-        for key, (dir, dx, dy) in directions.items():
-            if keys[key]:
-                self.direction = dir
-                new_position.x += dx
-                new_position.y += dy
-                self.idle = False
+        if keys[pygame.K_LEFT] or keys[pygame.K_q]:
+            new_position.x -= self.speed * delta_time
+            self.direction = 'left'
+            self.idle = False
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            new_position.x += self.speed * delta_time
+            self.direction = 'right'
+            self.idle = False
+        if keys[pygame.K_UP] or keys[pygame.K_z]:
+            new_position.y -= self.speed * delta_time
+            self.direction = 'up'
+            self.idle = False
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            new_position.y += self.speed * delta_time
+            self.direction = 'down'
+            self.idle = False
 
         new_rect = self.rect.copy()
         new_rect.center = new_position
         if not self.check_collisions(new_rect):
             self.position = new_position
             self.rect.center = self.position
-
-        if self.idle:
-            self.update_idle_animation(delta_time)
-        else:
-            self.update_walk_animation(delta_time)
-
-        if keys[pygame.K_SPACE]:
-            self.shoot()
-
-        for bullet in self.bullets:
-            bullet.update(delta_time)
-            if npcs:
-                for npc in npcs:
-                    if bullet.rect.colliderect(npc.rect):
-                        npc.kill()
-                        bullet.kill()
-                        break
-
-            if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
-                bullet.kill()
 
     def update_idle_animation(self, delta_time):
         self.idle_timer += delta_time
