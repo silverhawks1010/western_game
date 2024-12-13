@@ -86,16 +86,6 @@ class Map:
         base_y = screen_height - 50
 
         # Draw placeholder crosses (grayed out)
-        for i in range(self.total_npcs_to_defeat):
-            pos_x = start_x + (i * cross_spacing)
-            if i < self.defeated_npcs:
-                # Draw red cross for defeated NPCs
-                self.screen.blit(self.cross_image, (pos_x, base_y))
-            else:
-                # Draw grayed out cross for remaining NPCs
-                grayed_cross = self.cross_image.copy()
-                grayed_cross.fill((100, 100, 100), special_flags=pygame.BLEND_RGBA_MULT)
-                self.screen.blit(grayed_cross, (pos_x, base_y))
 
     def switch_map(self, map_name):
         self.tmx_data = pytmx.load_pygame(f"assets/map/{map_name}.tmx")
@@ -410,10 +400,6 @@ class Map:
         self.screen.blit(self.coin_image, coin_image_rect.topleft)
         self.screen.blit(agent_text, agent_text_rect)
 
-        money_text = self.western_font_small.render(f'{self.player.money}', True, (255, 255, 0))
-        money_text_rect = money_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery))
-        self.screen.blit(money_text, money_text_rect)
-
         # Draw ammo icons
         screen_width = self.screen.get_width()
         ammo_spacing = 25  # Espacement entre les balles
@@ -447,10 +433,9 @@ class Map:
 
         # Draw stars (points)
         start_x = hud_rect.x + 20
-        for i in range(self.player.points):
-            star_x = start_x + i * 33
-            star_y = hud_rect.top + 60
-            self.screen.blit(self.star_image, (star_x, star_y))
+        for i in range(self.defeated_npcs):
+            star_x = start_x + i * (self.star_image.get_width() + 5)
+            self.screen.blit(self.star_image, (star_x, hud_rect.y + 60))
 
 
         if self.player.is_reloading:
