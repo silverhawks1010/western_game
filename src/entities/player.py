@@ -313,4 +313,3 @@ class Player(pygame.sprite.Sprite):
 
     def draw(self, surface):
         self.bullets.draw(surface)
-        surface.blit(self.image, self.rect.topleft)

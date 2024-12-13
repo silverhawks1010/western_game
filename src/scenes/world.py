@@ -86,16 +86,6 @@ class Map:
         base_y = screen_height - 50
 
         # Draw placeholder crosses (grayed out)
-        for i in range(self.total_npcs_to_defeat):
-            pos_x = start_x + (i * cross_spacing)
-            if i < self.defeated_npcs:
-                # Draw red cross for defeated NPCs
-                self.screen.blit(self.cross_image, (pos_x, base_y))
-            else:
-                # Draw grayed out cross for remaining NPCs
-                grayed_cross = self.cross_image.copy()
-                grayed_cross.fill((100, 100, 100), special_flags=pygame.BLEND_RGBA_MULT)
-                self.screen.blit(grayed_cross, (pos_x, base_y))
 
     def switch_map(self, map_name):
         self.tmx_data = pytmx.load_pygame(f"assets/map/{map_name}.tmx")

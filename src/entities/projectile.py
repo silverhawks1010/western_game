@@ -22,7 +22,3 @@ class Bullet(pygame.sprite.Sprite):
             self.position.x -= move_amount
         elif self.direction == 'right':
             self.position.x += move_amount
-
-    def draw(self, surface):
-        print(self.image)
-        surface.blit(self.image, self.rect.topleft)
