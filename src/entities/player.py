@@ -172,20 +172,7 @@ class Player(pygame.sprite.Sprite):
     def shoot(self):
         current_time = pygame.time.get_ticks()
 
-        if self.is_reloading:
-            if current_time - self.reload_start >= self.reload_time:
-                self.ammo_in_magazine = min(self.max_magazine, self.total_ammo)
-                self.total_ammo -= self.ammo_in_magazine
-                self.is_reloading = False
-            else:
-                return
-
-        if self.ammo_in_magazine <= 0:
-            if self.total_ammo > 0 and not self.is_reloading:
-                self.is_reloading = True
-                self.reload_start = current_time
-                if self.reload_sound:
-                    self.reload_sound.play()
+        if self.is_reloading or self.ammo_in_magazine <= 0:
             return
 
         if current_time - self.last_shot > self.shot_cooldown:
@@ -193,30 +180,31 @@ class Player(pygame.sprite.Sprite):
                 if self.shot_sound:
                     self.shot_sound.play()
 
-                # Créer la balle à la position du joueur plutôt qu'au centre de l'écran
-                offset = 30
-                spawn_pos = list(self.position)
+                # Récupérer le centre de l'écran
+                screen = pygame.display.get_surface()
+                spawn_pos = list(self.position)  # Utiliser la position du joueur
 
+                # Ajuster la position pour qu'elle soit relative à l'écran
+                screen_offset_x = screen.get_width() // 2 - self.rect.centerx
+                screen_offset_y = screen.get_height() // 2 - self.rect.centery
+                spawn_pos[0] += screen_offset_x
+                spawn_pos[1] += screen_offset_y
+
+                # Ajouter un offset pour que la balle parte de devant le joueur
+                offset = 30
                 if self.direction == 'up':
                     spawn_pos[1] -= offset
-                    spawn_pos[0] += 15
                 elif self.direction == 'down':
                     spawn_pos[1] += offset
-                    spawn_pos[0] += 15
                 elif self.direction == 'left':
                     spawn_pos[0] -= offset
-                    spawn_pos[1] += 15
                 elif self.direction == 'right':
                     spawn_pos[0] += offset
-                    spawn_pos[1] += 15
 
-                bullet = Bullet(
-                    spawn_pos,
-                    self.direction,
-                    self.bullet_sprites[self.direction],
-                    self.collision_layer
-                )
+                bullet = Bullet(spawn_pos, self.direction, self.bullet_sprites[self.direction])
                 self.bullets.add(bullet)
+                print(f"Balle créée! Position: {spawn_pos}, Direction: {self.direction}")
+
                 self.last_shot = current_time
                 self.ammo_in_magazine -= 1
 

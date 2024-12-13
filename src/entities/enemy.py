@@ -18,6 +18,7 @@ class Enemy(pygame.sprite.Sprite):
         # Configuration de l'ennemi
         self.speed = 40
         self.health = 2
+        self.hit_cooldown = 0  # Cooldown entre les impacts
         self.damage_cooldown = 2000
         self.last_damage_time = 0
         self.detection_range = 200
@@ -46,6 +47,15 @@ class Enemy(pygame.sprite.Sprite):
         self.flash_interval = 0.05  # Durée entre chaque alternance de visibilité
         self.flash_visible = True
         self.original_frames = None
+
+    def take_damage(self):
+        current_time = pygame.time.get_ticks()
+        if current_time > self.hit_cooldown:
+            self.health -= 1
+            self.hit_cooldown = current_time + 500  # 500ms de cooldown entre les impacts
+            self.start_flash()  # On a déjà la méthode start_flash donc on l'utilise directement
+            return True
+        return False
 
     def start_flash(self):
         self.is_flashing = True

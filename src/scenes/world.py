@@ -156,41 +156,54 @@ class Map:
     def update(self):
         delta_time = self.clock.tick(60) / 1000.0
 
+        # Update player and NPCs
         self.player.update(delta_time, self.npcs)
         self.npcs.update(delta_time)
 
         # Update enemies
-        for enemy in self.enemies:
+        for enemy in list(self.enemies):
             result = enemy.update(delta_time, self.player)
             if result == "game_over":
                 self.game_over()
-                return  # Sortir de la méthode update si game over
+                return
 
-            # Handle bullet collisions with enemies
-            for bullet in list(self.player.bullets):
-                bullet.update(delta_time)
+        # Update and check bullet collisions
+        for bullet in list(self.player.bullets):
+            bullet.update(delta_time)
 
-                # Vérifier si la balle sort de l'écran
-                if not self.screen.get_rect().colliderect(bullet.rect):
+            # Vérifier si la balle sort de l'écran
+            screen_rect = pygame.Rect(0, 0, self.screen.get_width(), self.screen.get_height())
+            bullet_screen_pos = bullet.rect.copy()
+            bullet_screen_pos.center = (
+                self.screen.get_width() // 2 + (bullet.rect.centerx - self.player.rect.centerx),
+                self.screen.get_height() // 2 + (bullet.rect.centery - self.player.rect.centery)
+            )
+
+            if not screen_rect.colliderect(bullet_screen_pos):
+                bullet.kill()
+                continue
+
+            # Vérifier les collisions avec les ennemis
+            for enemy in list(self.enemies):
+                # Calculer la distance entre la balle et l'ennemi
+                dx = bullet.rect.centerx - enemy.rect.centerx
+                dy = bullet.rect.centery - enemy.rect.centery
+                distance = (dx * dx + dy * dy) ** 0.5
+
+                if distance < 30:  # Ajuster cette valeur pour la zone de collision
+                    print("Hit enemy!")  # Debug
                     bullet.kill()
-                    continue
+                    enemy.take_damage()
 
-                # Vérifier les collisions avec les ennemis
-                for enemy in list(self.enemies):
-                    if bullet.hitbox.colliderect(enemy.hitbox):  # Utiliser les hitbox pour la collision
-                        print("Enemy hit by bullet!")  # Debug
-                        bullet.kill()
-                        enemy.health -= 1
-                        enemy.start_flash()
+                    if enemy.health <= 0:
+                        self.enemies.remove(enemy)
+                        self.group.remove(enemy)
+                        self.player.points += 1
+                    break
 
-                        if enemy.health <= 0:
-                            self.enemies.remove(enemy)
-                            self.group.remove(enemy)
-                            self.player.points += 1
-                        break  # Sortir après la première collision
-
-        # Handle interactions and collisions
+            # Handle interactions and camera
         self.handle_interactions()
+        self.group.center(self.player.hitbox.center)
 
         # Update bullets
         self.player.bullets.update(delta_time)
@@ -211,7 +224,9 @@ class Map:
         if keys[pygame.K_e]:
             for npc in self.npcs:
                 if self.player.hitbox.colliderect(npc.rect):
+                    print(f"Interacting with NPC at {npc.rect.topleft}")  # Debug
                     if npc.interaction_type == 'combat':
+                        print("Starting combat with NPC")  # Debug
                         self.start_combat(npc)
 
     def remove_npc(self, npc):
@@ -252,39 +267,37 @@ class Map:
     def show_combat_results(self, combat, requirements):
         result_font = self.western_font_medium
 
-        # Préparer les textes
+        # Prepare the texts
         score_text = f"Score: {combat.score} / {requirements['score']}"
-        accuracy_text = f"Précision: {combat.accuracy * 100:.1f}% / {requirements['accuracy'] * 100}%"
-        result = "VICTOIRE!" if (combat.score >= requirements["score"] and
-                                 combat.accuracy >= requirements["accuracy"]) else "ÉCHEC"
-        result_text = f"Résultat: {result}"
+        # Ne pas multiplier l'accuracy par 100 car elle est déjà en pourcentage
+        accuracy_text = f"Accuracy: {combat.accuracy:.1f}% / {requirements['accuracy'] * 100:.1f}%"
+        result = "VICTORY!" if (combat.score >= requirements["score"] and
+                                combat.accuracy / 100 >= requirements["accuracy"]) else "FAILURE"
+        result_text = f"Result: {result}"
 
-        # Créer les surfaces de texte
+        # Create text surfaces
         score_surface = result_font.render(score_text, True, (255, 255, 255))
         accuracy_surface = result_font.render(accuracy_text, True, (255, 255, 255))
         result_surface = result_font.render(result_text, True,
-                                            (0, 255, 0) if result == "VICTOIRE!" else (255, 0, 0))
+                                            (0, 255, 0) if result == "VICTORY!" else (255, 0, 0))
 
         # Positions
         center_x = self.screen.get_width() // 2
         start_y = self.screen.get_height() // 2 - 100
 
-        # Créer l'overlay
+        # Create the overlay
         overlay = pygame.Surface(self.screen.get_size())
         overlay.fill((0, 0, 0))
         overlay.set_alpha(128)
 
-        # Afficher les résultats
+        # Display the results
         self.screen.blit(overlay, (0, 0))
-        self.screen.blit(score_surface,
-                         score_surface.get_rect(center=(center_x, start_y)))
-        self.screen.blit(accuracy_surface,
-                         accuracy_surface.get_rect(center=(center_x, start_y + 50)))
-        self.screen.blit(result_surface,
-                         result_surface.get_rect(center=(center_x, start_y + 100)))
+        self.screen.blit(score_surface, score_surface.get_rect(center=(center_x, start_y)))
+        self.screen.blit(accuracy_surface, accuracy_surface.get_rect(center=(center_x, start_y + 50)))
+        self.screen.blit(result_surface, result_surface.get_rect(center=(center_x, start_y + 100)))
 
         pygame.display.flip()
-        pygame.time.wait(2000)  # Afficher pendant 2 secondes
+        pygame.time.wait(2000)  # Display for 2 seconds
 
     def draw_lives(self):
         heart_spacing = 40
