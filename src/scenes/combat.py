@@ -298,41 +298,42 @@ class Combat:
         for target in self.targets:
             target.draw(self.frame)
 
-        # Créer un fond semi-transparent pour le HUD
-        hud_surface = pygame.Surface((250, 150))  # Ajuster la taille du fond si nécessaire
-        hud_surface.set_alpha(128)  # Définir la transparence (0 = transparent, 255 = opaque)
-        hud_surface.fill((0, 0, 0))  # Remplir le fond de noir
-        hud_rect = hud_surface.get_rect(bottomright=(self.frame.get_width() - 10, self.frame.get_height() - 10))
+        # Charger et redimensionner l'image du cercle en bois pour le timer
+        timer_bg = pygame.image.load('assets/images/cerclebois.png').convert_alpha()
+        timer_bg = pygame.transform.scale(timer_bg, (300, 290))  # Augmenté de 140,120 à 200,180
+
+        # Afficher le fond du timer (cercle en bois)
+        self.frame.blit(timer_bg, (self.frame.get_width() - 280, -50))  # Ajusté la position pour la nouvelle taille
+
+        # Score et précision avec la pancarte
         self.frame.blit(self.sign_bg, (-40, -40))
 
-        # Score (positionné en haut à gauche)
+        # Score
         score_label = self.small_font.render("SCORE", True, self.text_color)
         score_value = self.font.render(str(self.score), True, self.highlight_color)
-        self.frame.blit(score_label, (75, 92))  # Position fixe en haut à gauche
-        self.frame.blit(score_value, (75, 118))  # Position fixe en haut à gauche
+        self.frame.blit(score_label, (75, 92))
+        self.frame.blit(score_value, (75, 118))
 
-        # Précision (positionné en haut à gauche)
+        # Précision
         accuracy = f"{self.accuracy:.1f}%" if self.shots > 0 else "0.0%"
         accuracy_label = self.small_font.render("PRECISION", True, self.text_color)
         accuracy_value = self.font.render(accuracy, True, self.highlight_color)
-        self.frame.blit(accuracy_label, (75, 162))  # Position fixe en haut à gauche
-        self.frame.blit(accuracy_value, (75, 188))  # Position fixe en haut à gauche
+        self.frame.blit(accuracy_label, (75, 162))
+        self.frame.blit(accuracy_value, (75, 188))
 
-        # Timer (coin supérieur droit)
-        timer_surface = pygame.Surface((120, 100))
-        timer_surface.set_alpha(128)
-        timer_surface.fill((0, 0, 0))
-        self.frame.blit(timer_surface, (self.frame.get_width() - 130, 10))
-
+        # Timer
         timer_label = self.small_font.render("TEMPS", True, self.text_color)
         time_left = max(0, self.game_time - (pygame.time.get_ticks() - self.start_time) // 1000)
-        timer_value = self.font.render(f"{time_left}s", True,
-                                       (255, 50, 50) if time_left <= 3 else self.highlight_color)
+        timer_value = pygame.font.Font('assets/fonts/western.ttf', 56).render(f"{time_left}s", True,
+                                                                              # Police plus grande (56)
+                                                                              (255, 50,
+                                                                               50) if time_left <= 3 else self.highlight_color)
 
+        # Position du texte du timer vers le bas à gauche du cercle
         timer_label_rect = timer_label.get_rect()
-        timer_label_rect.topright = (self.frame.get_width() - 20, 20)
+        timer_label_rect.topleft = (self.frame.get_width() - 165, 40)  # Plus bas (60) et à gauche (240)
         timer_value_rect = timer_value.get_rect()
-        timer_value_rect.topright = (self.frame.get_width() - 20, 55)
+        timer_value_rect.topleft = (self.frame.get_width() - 160, 110)
 
         self.frame.blit(timer_label, timer_label_rect)
         self.frame.blit(timer_value, timer_value_rect)
