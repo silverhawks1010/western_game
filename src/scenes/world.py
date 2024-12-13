@@ -17,7 +17,7 @@ class Map:
         self.group = None
         self.player = None
         self.npcs = pygame.sprite.Group()
-        self.dev_mode = False
+        self.dev_mode = True
         self.active_npc = None
 
         # Clock for delta_time
@@ -109,7 +109,7 @@ class Map:
 
         # Player
 
-        self.player = Player(self.selected_character, (4000, 3000), self.collision_layer)
+        self.player = Player(self.selected_character, (4053, 1825), self.collision_layer)
 
         foreground_layer = self.tmx_data.get_layer_by_name('Level 2')
         foreground_layer_index = self.tmx_data.layers.index(foreground_layer)
@@ -133,7 +133,7 @@ class Map:
         self.group.add(npc1)
 
         npc2 = NPC(
-            position=(1268, 577),
+            position=(813, 3680),
             image_path='assets/images/sprite/npc/CowBoyIdle.png',
             message="Prepare for battle!",
             interaction_type='combat'
@@ -141,17 +141,15 @@ class Map:
         self.npcs.add(npc2)
         self.group.add(npc2)
 
-        for _ in range(5):
-            npc_x = random.randint(0, self.map_layer.map_rect.width)
-            npc_y = random.randint(0, self.map_layer.map_rect.height)
-            npc = NPC(
-                position=(npc_x, npc_y),
-                image_path='assets/images/sprite/npc/CowBoyIdle.png',
-                message="Prepare for battle!",
-                interaction_type='combat'
-            )
-            self.npcs.add(npc)
-            self.group.add(npc)
+        npc3 = NPC(
+            position=(7370, 4239),
+            image_path='assets/images/sprite/npc/CowBoyIdle.png',
+            message="Prepare for battle!",
+            interaction_type='combat'
+        )
+        self.npcs.add(npc3)
+        self.group.add(npc3)
+
 
     def update(self):
         delta_time = self.clock.tick(60) / 1000.0
@@ -359,9 +357,13 @@ class Map:
         self.draw_defeated_npc_tracker()
         self.draw_lives()  # Ajouter l'affichage des vies
 
+
         if self.dev_mode:
             self.draw_hitboxes()
             self.draw_collision_layer()
+            coord_text = self.hud_font.render(f'{self.player.hitbox.topleft}', True, (255, 255, 0))
+            coord_text_rect = coord_text.get_rect(midleft=(100, 100))
+            self.screen.blit(coord_text, coord_text_rect)
 
     def game_won(self):
         victory_font = pygame.font.SysFont('Arial', 72)
