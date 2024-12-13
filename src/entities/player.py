@@ -83,6 +83,14 @@ class Player(pygame.sprite.Sprite):
         # Sounds
         self.shot_sound = self.load_shot_sound()
 
+        # Système de vies
+        self.max_lives = 3
+        self.current_lives = 3
+        self.heart_image = pygame.transform.scale(
+            pygame.image.load('assets/images/coeur.png'),
+            (30, 30)
+        )
+
     def load_bullet_sprites(self):
         try:
             self.ammo_icon = pygame.image.load('assets/images/map/balle/balleGAUCHE.png').convert_alpha()

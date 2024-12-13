@@ -37,6 +37,36 @@ class Map:
         self.selected_character = selected_character  # Ajoutez ceci
         self.switch_map("western_map")
 
+        # Combat tracking
+        self.total_npcs_to_defeat = 3
+        self.defeated_npcs = 0
+        self.cross_image = pygame.transform.scale(
+            pygame.image.load('assets/images/red_cross.png'),
+            (30, 30)
+        )
+
+    def draw_defeated_npc_tracker(self):
+        # Position for the first cross (bottom right corner)
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        # Calculate starting position for crosses
+        cross_spacing = 40  # Space between crosses
+        start_x = screen_width - (self.total_npcs_to_defeat * cross_spacing) - 20
+        base_y = screen_height - 50
+
+        # Draw placeholder crosses (grayed out)
+        for i in range(self.total_npcs_to_defeat):
+            pos_x = start_x + (i * cross_spacing)
+            if i < self.defeated_npcs:
+                # Draw red cross for defeated NPCs
+                self.screen.blit(self.cross_image, (pos_x, base_y))
+            else:
+                # Draw grayed out cross for remaining NPCs
+                grayed_cross = self.cross_image.copy()
+                grayed_cross.fill((100, 100, 100), special_flags=pygame.BLEND_RGBA_MULT)
+                self.screen.blit(grayed_cross, (pos_x, base_y))
+
     def switch_map(self, map_name):
         self.tmx_data = pytmx.load_pygame(f"assets/map/{map_name}.tmx")
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
@@ -133,39 +163,123 @@ class Map:
         self.bg_channel.stop()
         self.bg_channel.play(self.battle_sound, loops=-1)
 
-        # Créer l'instance de combat avec le bon numéro
         combat = Combat(self.screen, self.player, npc, combat_number=self.player.combat_number)
         combat.run()
 
-        # Si le combat est réussi (score et précision suffisants).
-        if combat.score >= 10 and combat.accuracy >= 1:
-            # Incrémenter le numéro de combat pour le prochain combat
+        # Vérifier le résultat du combat
+        if combat.score >= 800 and combat.accuracy >= 0.5:  # 50% de précision
             self.player.combat_number += 1
+            self.defeated_npcs += 1
+            self.remove_npc(npc)  # Supprimer le NPC seulement en cas de victoire
+
+            # Vérifier si le jeu est gagné
+            if self.defeated_npcs >= self.total_npcs_to_defeat:
+                self.game_won()
+        else:
+            # Le joueur perd une vie en cas de défaite
+            self.player.current_lives -= 1
+            if self.player.current_lives <= 0:
+                self.game_over()
 
         self.bg_channel.stop()
         self.bg_channel.play(self.explo_sound, loops=-1)
 
-        # Supprimer le NPC après le combat
-        self.remove_npc(npc)
+    def draw_lives(self):
+        heart_spacing = 40
+        base_y = self.screen.get_height() - 50
+
+        for i in range(self.player.max_lives):
+            pos_x = 20 + (i * heart_spacing)
+            if i < self.player.current_lives:
+                # Cœur plein
+                self.screen.blit(self.player.heart_image, (pos_x, base_y))
+            else:
+                # Cœur vide (grisé)
+                grayed_heart = self.player.heart_image.copy()
+                grayed_heart.fill((100, 100, 100), special_flags=pygame.BLEND_RGBA_MULT)
+                self.screen.blit(grayed_heart, (pos_x, base_y))
+
+    def game_over(self):
+        game_over_font = pygame.font.SysFont('Arial', 72)
+        game_over_text = game_over_font.render('Game Over', True, (255, 0, 0))
+        retry_font = pygame.font.SysFont('Arial', 36)
+        retry_text = retry_font.render('Press SPACE to retry or ESC to quit', True, (255, 255, 255))
+
+        text_rect = game_over_text.get_rect(center=(self.screen.get_width() // 2,
+                                                    self.screen.get_height() // 2))
+        retry_rect = retry_text.get_rect(center=(self.screen.get_width() // 2,
+                                                 self.screen.get_height() // 2 + 80))
+
+        # Créer l'overlay sombre
+        overlay = pygame.Surface(self.screen.get_size())
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(128)
+
+        waiting_for_input = True
+        while waiting_for_input:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        # Réinitialiser le jeu
+                        self.reset_game()
+                        waiting_for_input = False
+                    elif event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+
+            # Dessiner l'écran de game over
+            self.screen.blit(overlay, (0, 0))
+            self.screen.blit(game_over_text, text_rect)
+            self.screen.blit(retry_text, retry_rect)
+            pygame.display.flip()
+
+    # Ajoutez la méthode reset_game dans la classe Map
+    def reset_game(self):
+        # Réinitialiser les vies du joueur
+        self.player.current_lives = self.player.max_lives
+
+        # Réinitialiser le combat_number
+        self.player.combat_number = 1
+
+        # Réinitialiser les NPCs vaincus
+        self.defeated_npcs = 0
+
+        # Recréer tous les NPCs
+        self.npcs.empty()
+        self.spawn_npcs()
 
     def draw(self):
         self.group.draw(self.screen)
         self.player.bullets.draw(self.screen)
 
-        # Draw NPC dialog
         if self.active_npc:
             self.active_npc.draw_dialog(self.screen)
 
-        # Draw HUD
         self.draw_hud()
+        self.draw_defeated_npc_tracker()
+        self.draw_lives()  # Ajouter l'affichage des vies
 
         if self.dev_mode:
             self.draw_hitboxes()
             self.draw_collision_layer()
 
-            coord_text = self.hud_font.render(f'{self.player.hitbox.topleft}', True, (255, 255, 0))
-            coord_text_rect = coord_text.get_rect(midleft=(100, 100))
-            self.screen.blit(coord_text, coord_text_rect)
+    def game_won(self):
+        victory_font = pygame.font.SysFont('Arial', 72)
+        victory_text = victory_font.render('Victory!', True, (255, 215, 0))
+        text_rect = victory_text.get_rect(center=(self.screen.get_width() // 2,
+                                                  self.screen.get_height() // 2))
+
+        # Afficher l'écran de victoire
+        overlay = pygame.Surface(self.screen.get_size())
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(128)
+
+        self.screen.blit(overlay, (0, 0))
+        self.screen.blit(victory_text, text_rect)
+        pygame.display.flip()
+
+        # Attendre quelques secondes
+        pygame.time.wait(3000)
 
     def draw_hud(self):
         self.screen.blit(self.hud_image, (10, 10))
