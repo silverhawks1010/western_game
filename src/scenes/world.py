@@ -410,10 +410,6 @@ class Map:
         self.screen.blit(self.coin_image, coin_image_rect.topleft)
         self.screen.blit(agent_text, agent_text_rect)
 
-        money_text = self.western_font_small.render(f'{self.player.money}', True, (255, 255, 0))
-        money_text_rect = money_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery))
-        self.screen.blit(money_text, money_text_rect)
-
         # Draw ammo icons
         screen_width = self.screen.get_width()
         ammo_spacing = 25  # Espacement entre les balles
@@ -447,10 +443,9 @@ class Map:
 
         # Draw stars (points)
         start_x = hud_rect.x + 20
-        for i in range(self.player.points):
-            star_x = start_x + i * 33
-            star_y = hud_rect.top + 60
-            self.screen.blit(self.star_image, (star_x, star_y))
+        for i in range(self.defeated_npcs):
+            star_x = start_x + i * (self.star_image.get_width() + 5)
+            self.screen.blit(self.star_image, (star_x, hud_rect.y + 60))
 
 
         if self.player.is_reloading:

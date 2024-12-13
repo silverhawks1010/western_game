@@ -1,6 +1,5 @@
 import pygame
 
-
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, position, direction, image):
         super().__init__()
@@ -24,6 +23,6 @@ class Bullet(pygame.sprite.Sprite):
         elif self.direction == 'right':
             self.position.x += move_amount
 
-        # Mettre à jour le rect et la hitbox
-        self.rect.center = self.position
-        self.hitbox.center = self.position
+    def draw(self, surface):
+        print(self.image)
+        surface.blit(self.image, self.rect.topleft)

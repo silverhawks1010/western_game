@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="500" height="300" tilewidth="16" tileheight="16" infinite="0" nextlayerid="18" nextobjectid="613">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="500" height="300" tilewidth="16" tileheight="16" infinite="0" nextlayerid="18" nextobjectid="618">
  <tileset firstgid="1" source="base_element_map.tsx"/>
  <tileset firstgid="4001" source="maison2.tsx"/>
  <tileset firstgid="4962" source="maison.tsx"/>
@@ -1256,9 +1256,6 @@
   <object id="66" name="Collisions" x="3797.5" y="1948"/>
   <object id="67" name="Collisions" x="3788.5" y="1956"/>
   <object id="68" name="Collisions" x="3796.5" y="1958.5"/>
-  <object id="77" name="Collisions" x="3625.5" y="1918"/>
-  <object id="80" name="Collisions" x="3616.5" y="1927" width="79.5" height="30.5"/>
-  <object id="81" name="Collisions" x="3634" y="1908" width="70" height="13"/>
   <object id="82" name="Collisions" x="3780" y="1728.5" width="57" height="62.5"/>
   <object id="83" name="Collisions" x="3846.5" y="1955.5" width="55.5" height="59.5"/>
   <object id="84" name="Collisions" x="3586" y="2025.5" width="26.5" height="52.5"/>
@@ -1303,7 +1300,6 @@
   <object id="130" name="Collisions" x="4154" y="1812"/>
   <object id="131" name="Collisions" x="3994" y="1711.33" width="142.667" height="19.3333"/>
   <object id="133" name="Collisions" x="4192" y="1935.5" width="62" height="65.5"/>
-  <object id="134" name="Collisions" x="3617.67" y="1957" width="77.6667" height="15.6667"/>
   <object id="136" name="Collisions" x="732" y="533.333" width="166.667" height="20.6667"/>
   <object id="137" name="Collisions" x="732.5" y="553.5" width="166.5" height="32"/>
   <object id="138" name="Collisions" x="892" y="585.5" width="8" height="255.5"/>
@@ -1730,6 +1726,7 @@
   <object id="607" name="Collisions" x="5056" y="2028" height="4"/>
   <object id="610" name="Collisions" x="6009.33" y="258.667" width="1554.67" height="1249.33"/>
   <object id="611" name="Collisions" x="6132" y="190.667" height="1.33333"/>
-  <object id="612" x="3615.5" y="1872" width="71.25" height="35.75"/>
+  <object id="616" x="3616.67" y="1872" width="69.3333" height="56.3333"/>
+  <object id="617" x="3630.67" y="1929" width="64.6667" height="40"/>
  </objectgroup>
 </map>

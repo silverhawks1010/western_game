@@ -3,6 +3,7 @@ import sys
 from scenes.menu import Menu
 from scenes.world import Map
 from scenes.character_selection import CharacterSelection
+from src.entities import player
 
 # Initialize Pygame
 pygame.init()
@@ -61,15 +62,13 @@ while running:
         map.update()
 
         # Update and draw bullets
-        if hasattr(map, 'player'):
-            map.player.bullets.update()
+
+        map.player.bullets.update()
+        map.player.bullets.draw(frame)
 
         # Draw the map and elements
         map.draw()
-
-        # Draw bullets
-        if hasattr(map, 'player'):
-            map.player.bullets.draw(frame)
+        map.player.draw(frame)
 
     # Update the display
     pygame.display.flip()
