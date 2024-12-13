@@ -133,12 +133,19 @@ class Map:
         self.bg_channel.stop()
         self.bg_channel.play(self.battle_sound, loops=-1)
 
-        combat = Combat(self.screen, self.player, npc)
+        # Créer l'instance de combat avec le bon numéro
+        combat = Combat(self.screen, self.player, npc, combat_number=self.player.combat_number)
         combat.run()
+
+        # Si le combat est réussi (score et précision suffisants).
+        if combat.score >= 10 and combat.accuracy >= 1:
+            # Incrémenter le numéro de combat pour le prochain combat
+            self.player.combat_number += 1
 
         self.bg_channel.stop()
         self.bg_channel.play(self.explo_sound, loops=-1)
 
+        # Supprimer le NPC après le combat
         self.remove_npc(npc)
 
     def draw(self):

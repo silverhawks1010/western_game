@@ -70,6 +70,7 @@ class Player(pygame.sprite.Sprite):
         # Chargement des sprites des balles et des sons
         self.bullet_sprites = None  # Initialiser l'attribut
         self.load_bullet_sprites()  # Appeler la méthode pour charger les sprites
+        self.combat_number = 1  # Initialiser combat_number à 1 (ou la valeur par défaut souhaitée)
 
         try:
             self.reload_sound = pygame.mixer.Sound('assets/sounds/revolver_reload.mp3')
@@ -247,7 +248,7 @@ class Player(pygame.sprite.Sprite):
         self.idle = True
 
         if keys[pygame.K_LSHIFT]:
-            self.speed = 100
+            self.speed = 1000
             self.animation_speed = 0.1
         else:
             self.speed = 50

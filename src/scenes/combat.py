@@ -103,8 +103,9 @@ class GunSprite:
     def draw(self, screen):
         screen.blit(self.frames[self.current_frame], (self.x, self.y))
 
+
 class Target:
-    def __init__(self):
+    def __init__(self, moving=False):
         self.size_options = {
             'large': {'radius': 50, 'multiplier': 1},
             'medium': {'radius': 35, 'multiplier': 1.5},
@@ -116,21 +117,49 @@ class Target:
         self.point_multiplier = self.size_options[self.size]['multiplier']
         self.rail = random.randint(0, 2)
         self.y = 200 + (self.rail * 100)
-        self.direction = random.choice([-1, 1])
-        self.speed = random.uniform(500, 1000)
-        if self.direction == 1:
-            self.x = -self.radius
-        else:
-            self.x = pygame.display.get_surface().get_width() + self.radius
-        self.active = True
 
-    def move(self, delta_time):
-        self.x += self.speed * self.direction * delta_time
-        if (self.x < -self.radius * 2) or (self.x > pygame.display.get_surface().get_width() + self.radius * 2):
+        # Position initiale et direction de mouvement
+        self.direction = random.choice([-1, 1])  # -1 pour gauche, 1 pour droite
+        if self.direction == 1:
+            self.x = -self.radius  # Commence à gauche de l'écran
+        else:
+            self.x = pygame.display.get_surface().get_width() + self.radius  # Commence à droite de l'écran
+
+        self.active = True
+        self.visible = True
+        self.moving = moving
+
+        # Vitesse de déplacement pour les cibles mobiles
+        if moving:
+            # Augmentation significative de la vitesse
+            self.speed = random.uniform(400, 600)  # Vitesse entre 400 et 600 pixels par seconde
+            self.has_timer = False
+        else:
+            self.speed = 0
+            self.x = random.randint(self.radius, pygame.display.get_surface().get_width() - self.radius)
+            self.has_timer = True
+            self.apparition_time = random.uniform(1, 3)
+            self.disparition_time = pygame.time.get_ticks() + self.apparition_time * 1000
+
+    def move(self, delta_time, screen_width):
+        # Pour les cibles statiques avec timer
+        if self.has_timer and pygame.time.get_ticks() > self.disparition_time:
+            self.visible = False
             self.active = False
+            return
+
+        if self.moving:
+            # Déplacement horizontal
+            self.x += self.speed * self.direction * delta_time
+
+            # Désactiver la cible si elle sort complètement de l'écran
+            if self.direction == 1 and self.x > screen_width + self.radius * 2:
+                self.active = False
+            elif self.direction == -1 and self.x < -self.radius * 2:
+                self.active = False
 
     def draw(self, screen):
-        if self.active:
+        if self.active and self.visible:  # Vérifier si la cible est active et visible
             pygame.draw.rect(screen, (101, 67, 33), (self.x - 5, self.y - self.radius, 10, self.radius * 2 + 20))
             pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), self.radius)
             pygame.draw.circle(screen, (255, 255, 255), (self.x, self.y), int(self.radius * 0.8))
@@ -140,10 +169,11 @@ class Target:
 
 
 class Combat:
-    def __init__(self, frame, player, pnj):
+    def __init__(self, frame, player, pnj, combat_number=1):  # Ajout de combat_number
         self.frame = frame
         self.player = player
         self.pnj = pnj
+        self.combat_number = combat_number  # Stocker le numéro du combat
         self.running = True
         self.targets = []
         self.score = 0
@@ -191,15 +221,27 @@ class Combat:
         if pygame.time.get_ticks() - self.start_time > self.game_time * 1000:
             self.running = False
             self.end_game()
+
+        # Gérer les cibles en fonction du numéro de combat
         if len(self.targets) < 5:
-            self.targets.append(Target())
+            # Combat 2 : cibles mobiles
+            if self.combat_number == 2:
+                self.targets.append(Target(moving=True))
+            # Combat 1 : cibles statiques
+            else:
+                self.targets.append(Target(moving=False))
+
+        # Mettre à jour toutes les cibles
         for target in self.targets:
-            target.move(delta_time)
+            target.move(delta_time, self.frame.get_width())
+
+        # Nettoyer les cibles inactives
         self.targets = [target for target in self.targets if target.active]
+
         if self.shots > 0:
             self.accuracy = (self.hits / self.shots) * 100
+
         self.gun.update(delta_time)
-        # Mettre à jour la position du pistolet en fonction de la souris
         self.gun.update_position(pygame.mouse.get_pos())
 
     def draw(self):
