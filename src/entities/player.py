@@ -160,7 +160,8 @@ class Player(pygame.sprite.Sprite):
             self.update_walk_animation(delta_time)
 
     def handle_shooting(self):
-        if pygame.key.get_pressed()[pygame.K_SPACE]:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
             self.shoot()
 
     def check_collisions(self, rect):
@@ -247,6 +248,7 @@ class Player(pygame.sprite.Sprite):
         self.update_bullets(delta_time, npcs)
         self.hitbox.center = self.rect.center
 
+
     def handle_movement(self, delta_time):
         keys = pygame.key.get_pressed()
         new_position = self.position.copy()
@@ -300,11 +302,8 @@ class Player(pygame.sprite.Sprite):
     def update_bullets(self, delta_time, npcs=None):
         self.bullets.update(delta_time)
         for bullet in list(self.bullets):
-            # Vérifier si la balle sort de l'écran
             if not pygame.display.get_surface().get_rect().colliderect(bullet.rect):
                 bullet.kill()
-
-            # Vérifier les collisions avec les NPCs
             if npcs:
                 npc_hit = pygame.sprite.spritecollideany(bullet, npcs)
                 if npc_hit:
@@ -313,5 +312,5 @@ class Player(pygame.sprite.Sprite):
                     self.points += 1
 
     def draw(self, surface):
-        surface.blit(self.image, self.rect.topleft)
         self.bullets.draw(surface)
+        surface.blit(self.image, self.rect.topleft)
