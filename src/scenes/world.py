@@ -17,7 +17,7 @@ class Map:
         self.group = None
         self.player = None
         self.npcs = pygame.sprite.Group()
-        self.dev_mode = True
+        self.dev_mode = False
         self.active_npc = None
 
         # Clock for delta_time
@@ -109,7 +109,7 @@ class Map:
 
         # Player
 
-        self.player = Player(self.selected_character, (4053, 1825), self.collision_layer)
+        self.player = Player(self.selected_character, (4065, 1870), self.collision_layer)
 
         foreground_layer = self.tmx_data.get_layer_by_name('Level 2')
         foreground_layer_index = self.tmx_data.layers.index(foreground_layer)
