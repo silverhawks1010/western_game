@@ -3,7 +3,6 @@ import pygame
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, position, direction, image):
         super().__init__()
-<<<<<<< Updated upstream
         self.image = pygame.transform.scale(image, (20, 20))  # Taille fixe pour mieux voir
         self.rect = self.image.get_rect()
         self.position = pygame.Vector2(position)
@@ -23,22 +22,6 @@ class Bullet(pygame.sprite.Sprite):
             self.position.x -= move_amount
         elif self.direction == 'right':
             self.position.x += move_amount
-=======
-        self.image = image
-        self.rect = self.image.get_rect(center=position)
-        self.direction = direction
-        self.speed = 300  # Adjust speed as needed
-
-    def update(self, delta_time):
-        if self.direction == 'up':
-            self.rect.y -= self.speed * delta_time
-        elif self.direction == 'down':
-            self.rect.y += self.speed * delta_time
-        elif self.direction == 'left':
-            self.rect.x -= self.speed * delta_time
-        elif self.direction == 'right':
-            self.rect.x += self.speed * delta_time
->>>>>>> Stashed changes
 
     def draw(self, surface):
         print(self.image)
