@@ -72,6 +72,15 @@ class Map:
         self.npcs.add(npc1)
         self.group.add(npc1)
 
+        npc2 = NPC(
+            position=(1268, 577),
+            image_path='assets/images/sprite/npc/CowBoyIdle.png',
+            message="Prepare for battle!",
+            interaction_type='combat'
+        )
+        self.npcs.add(npc2)
+        self.group.add(npc2)
+
         for _ in range(5):
             npc_x = random.randint(0, self.map_layer.map_rect.width)
             npc_y = random.randint(0, self.map_layer.map_rect.height)
