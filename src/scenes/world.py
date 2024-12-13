@@ -461,16 +461,20 @@ class Map:
             bullets_reloaded = min(bullets_to_reload, int(reload_progress * bullets_to_reload))
 
     def draw_hitboxes(self):
+        # Dessiner les hitboxes des NPCs
         for npc in self.npcs:
             pygame.draw.rect(self.screen, (255, 0, 0), npc.hitbox, 2)
+
+        # Dessiner la hitbox du joueur
         pygame.draw.rect(self.screen, (0, 255, 0), self.player.hitbox, 2)
 
-        # Draw total ammo
-        total_ammo_text = self.hud_font.render(f"/{self.player.total_ammo}", True, (255, 255, 255))
-        self.screen.blit(total_ammo_text, (ammo_start_x + (self.player.max_magazine * spacing) + 5, ammo_start_y))
+        # Dessiner les hitboxes des ennemis
+        for enemy in self.enemies:
+            pygame.draw.rect(self.screen, (255, 0, 0), enemy.hitbox, 2)
 
-        if self.dev_mode:
-            self.draw_hitboxes()
+        # Dessiner les hitboxes des balles si elles existent
+        for bullet in self.player.bullets:
+            pygame.draw.rect(self.screen, (255, 255, 0), bullet.hitbox, 2)
 
     def toggle_hitboxes(self):
         self.dev_mode = not self.dev_mode
