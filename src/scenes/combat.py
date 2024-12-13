@@ -106,6 +106,7 @@ class GunSprite:
 
 class Target:
     def __init__(self, moving=False):
+        # Configuration de la taille et des points
         self.size_options = {
             'large': {'radius': 50, 'multiplier': 1},
             'medium': {'radius': 35, 'multiplier': 1.5},
@@ -115,24 +116,48 @@ class Target:
         self.size = random.choice(list(self.size_options.keys()))
         self.radius = self.size_options[self.size]['radius']
         self.point_multiplier = self.size_options[self.size]['multiplier']
+
+        # Chargement des sprites
+        self.target_sprite = pygame.image.load('assets/images/target.png').convert_alpha()
+        explosion_sheet = pygame.image.load('assets/images/boom.png').convert_alpha()
+
+        # Redimensionner le sprite de la cible
+        sprite_size = (self.radius * 2, self.radius * 2)
+        self.target_sprite = pygame.transform.scale(self.target_sprite, sprite_size)
+
+        # Préparer les frames d'explosion
+        self.explosion_frames = []
+        frame_width = explosion_sheet.get_width() // 3  # 3 frames dans l'image
+        frame_height = explosion_sheet.get_height()
+        explosion_size = (self.radius * 3, self.radius * 3)  # Taille de l'explosion
+
+        for i in range(3):  # Pour chaque frame d'explosion
+            frame = explosion_sheet.subsurface((i * frame_width, 0, frame_width, frame_height))
+            frame = pygame.transform.scale(frame, explosion_size)
+            self.explosion_frames.append(frame)
+
+        # Position et mouvement
         self.rail = random.randint(0, 2)
         self.y = 200 + (self.rail * 100)
+        self.direction = random.choice([-1, 1])
 
-        # Position initiale et direction de mouvement
-        self.direction = random.choice([-1, 1])  # -1 pour gauche, 1 pour droite
         if self.direction == 1:
-            self.x = -self.radius  # Commence à gauche de l'écran
+            self.x = -self.radius
         else:
-            self.x = pygame.display.get_surface().get_width() + self.radius  # Commence à droite de l'écran
+            self.x = pygame.display.get_surface().get_width() + self.radius
 
+        # États
         self.active = True
         self.visible = True
         self.moving = moving
+        self.is_hit = False
+        self.hit_time = 0
+        self.current_explosion_frame = 0
+        self.frame_duration = 100  # Durée de chaque frame d'explosion en millisecondes
 
-        # Vitesse de déplacement pour les cibles mobiles
+        # Vitesse et timing
         if moving:
-            # Augmentation significative de la vitesse
-            self.speed = random.uniform(400, 600)  # Vitesse entre 400 et 600 pixels par seconde
+            self.speed = random.uniform(400, 600)
             self.has_timer = False
         else:
             self.speed = 0
@@ -141,31 +166,45 @@ class Target:
             self.apparition_time = random.uniform(1, 3)
             self.disparition_time = pygame.time.get_ticks() + self.apparition_time * 1000
 
+    def hit(self):
+        if not self.is_hit:
+            self.is_hit = True
+            self.hit_time = pygame.time.get_ticks()
+            self.current_explosion_frame = 0
+
     def move(self, delta_time, screen_width):
-        # Pour les cibles statiques avec timer
         if self.has_timer and pygame.time.get_ticks() > self.disparition_time:
             self.visible = False
             self.active = False
             return
 
-        if self.moving:
-            # Déplacement horizontal
+        if self.moving and not self.is_hit:
             self.x += self.speed * self.direction * delta_time
 
-            # Désactiver la cible si elle sort complètement de l'écran
             if self.direction == 1 and self.x > screen_width + self.radius * 2:
                 self.active = False
             elif self.direction == -1 and self.x < -self.radius * 2:
                 self.active = False
 
+        # Mettre à jour l'animation d'explosion
+        if self.is_hit:
+            time_since_hit = pygame.time.get_ticks() - self.hit_time
+            self.current_explosion_frame = time_since_hit // self.frame_duration
+            if self.current_explosion_frame >= len(self.explosion_frames):
+                self.active = False
+
     def draw(self, screen):
-        if self.active and self.visible:  # Vérifier si la cible est active et visible
-            pygame.draw.rect(screen, (101, 67, 33), (self.x - 5, self.y - self.radius, 10, self.radius * 2 + 20))
-            pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), self.radius)
-            pygame.draw.circle(screen, (255, 255, 255), (self.x, self.y), int(self.radius * 0.8))
-            pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), int(self.radius * 0.6))
-            pygame.draw.circle(screen, (255, 255, 255), (self.x, self.y), int(self.radius * 0.4))
-            pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), int(self.radius * 0.2))
+        if self.active and self.visible:
+            if not self.is_hit:
+                # Dessiner la cible normale
+                target_rect = self.target_sprite.get_rect(center=(self.x, self.y))
+                screen.blit(self.target_sprite, target_rect)
+            else:
+                # Dessiner la frame actuelle de l'explosion
+                if self.current_explosion_frame < len(self.explosion_frames):
+                    explosion_rect = self.explosion_frames[self.current_explosion_frame].get_rect(
+                        center=(self.x, self.y))
+                    screen.blit(self.explosion_frames[self.current_explosion_frame], explosion_rect)
 
 
 class Combat:
@@ -202,20 +241,21 @@ class Combat:
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                pygame.mouse.set_visible(True)  # Réafficher le curseur en quittant
+                pygame.mouse.set_visible(True)
                 self.running = False
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.gun.start_animation()
             mouse_x, mouse_y = pygame.mouse.get_pos()
             self.shots += 1
             for target in self.targets:
-                distance = math.sqrt((mouse_x - target.x)**2 + (mouse_y - target.y)**2)
-                if distance < target.radius:
-                    points = int(100 * target.point_multiplier * (1 - distance/target.radius))
-                    self.score += points
-                    self.hits += 1
-                    target.active = False
-                    self.hit_sound.play()
+                if not target.is_hit:  # Vérifier que la cible n'a pas déjà été touchée
+                    distance = math.sqrt((mouse_x - target.x) ** 2 + (mouse_y - target.y) ** 2)
+                    if distance < target.radius:
+                        points = int(100 * target.point_multiplier * (1 - distance / target.radius))
+                        self.score += points
+                        self.hits += 1
+                        target.hit()  # Appeler la méthode hit au lieu de désactiver directement
+                        self.hit_sound.play()
 
     def update(self, delta_time):
         if pygame.time.get_ticks() - self.start_time > self.game_time * 1000:
