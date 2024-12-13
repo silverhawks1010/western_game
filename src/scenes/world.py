@@ -1,4 +1,5 @@
 import os
+import sys
 import random
 import pygame
 import pytmx
@@ -28,9 +29,15 @@ class Map:
         self.explo_sound.set_volume(1)
         self.battle_sound.set_volume(1)
 
+        # Fonts
+        self.western_font_path = os.path.join("assets", "fonts", "western.ttf")
+        self.western_font_large = pygame.font.Font(self.western_font_path, 72)
+        self.western_font_medium = pygame.font.Font(self.western_font_path, 36)
+        self.western_font_small = pygame.font.Font(self.western_font_path, 24)
+
         # HUD
         self.hud_image = pygame.transform.scale(pygame.image.load('assets/images/hud.png'), (200, 100))
-        self.hud_font = pygame.font.SysFont('Arial', 24)
+        self.hud_font = pygame.font.Font(self.western_font_path, 24)
         self.star_image = pygame.transform.scale(pygame.image.load('assets/images/star.png'), (23, 23))
         self.coin_image = pygame.transform.scale(pygame.image.load('assets/images/coins.png'), (32, 32))
 
@@ -44,6 +51,13 @@ class Map:
             pygame.image.load('assets/images/red_cross.png'),
             (30, 30)
         )
+
+        # Difficulty settings for each combat
+        self.combat_requirements = {
+            1: {"score": 800, "accuracy": 0.5},  # Premier combat
+            2: {"score": 900, "accuracy": 0.8},  # Deuxième combat
+            3: {"score": 1000, "accuracy": 0.95}  # Troisième combat
+        }
 
     def draw_defeated_npc_tracker(self):
         # Position for the first cross (bottom right corner)
@@ -163,14 +177,20 @@ class Map:
         self.bg_channel.stop()
         self.bg_channel.play(self.battle_sound, loops=-1)
 
-        combat = Combat(self.screen, self.player, npc, combat_number=self.player.combat_number)
+        current_combat = self.player.combat_number
+        requirements = self.combat_requirements[current_combat]
+
+        combat = Combat(self.screen, self.player, npc, combat_number=current_combat)
         combat.run()
 
-        # Vérifier le résultat du combat
-        if combat.score >= 800 and combat.accuracy >= 0.5:  # 50% de précision
+        # Afficher les résultats et les objectifs
+        self.show_combat_results(combat, requirements)
+
+        # Vérifier le résultat du combat avec les exigences correspondantes
+        if combat.score >= requirements["score"] and combat.accuracy >= requirements["accuracy"]:
             self.player.combat_number += 1
             self.defeated_npcs += 1
-            self.remove_npc(npc)  # Supprimer le NPC seulement en cas de victoire
+            self.remove_npc(npc)
 
             # Vérifier si le jeu est gagné
             if self.defeated_npcs >= self.total_npcs_to_defeat:
@@ -183,6 +203,43 @@ class Map:
 
         self.bg_channel.stop()
         self.bg_channel.play(self.explo_sound, loops=-1)
+
+    def show_combat_results(self, combat, requirements):
+        result_font = self.western_font_medium
+
+        # Préparer les textes
+        score_text = f"Score: {combat.score} / {requirements['score']}"
+        accuracy_text = f"Précision: {combat.accuracy * 100:.1f}% / {requirements['accuracy'] * 100}%"
+        result = "VICTOIRE!" if (combat.score >= requirements["score"] and
+                                 combat.accuracy >= requirements["accuracy"]) else "ÉCHEC"
+        result_text = f"Résultat: {result}"
+
+        # Créer les surfaces de texte
+        score_surface = result_font.render(score_text, True, (255, 255, 255))
+        accuracy_surface = result_font.render(accuracy_text, True, (255, 255, 255))
+        result_surface = result_font.render(result_text, True,
+                                            (0, 255, 0) if result == "VICTOIRE!" else (255, 0, 0))
+
+        # Positions
+        center_x = self.screen.get_width() // 2
+        start_y = self.screen.get_height() // 2 - 100
+
+        # Créer l'overlay
+        overlay = pygame.Surface(self.screen.get_size())
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(128)
+
+        # Afficher les résultats
+        self.screen.blit(overlay, (0, 0))
+        self.screen.blit(score_surface,
+                         score_surface.get_rect(center=(center_x, start_y)))
+        self.screen.blit(accuracy_surface,
+                         accuracy_surface.get_rect(center=(center_x, start_y + 50)))
+        self.screen.blit(result_surface,
+                         result_surface.get_rect(center=(center_x, start_y + 100)))
+
+        pygame.display.flip()
+        pygame.time.wait(2000)  # Afficher pendant 2 secondes
 
     def draw_lives(self):
         heart_spacing = 40
@@ -200,10 +257,8 @@ class Map:
                 self.screen.blit(grayed_heart, (pos_x, base_y))
 
     def game_over(self):
-        game_over_font = pygame.font.SysFont('Arial', 72)
-        game_over_text = game_over_font.render('Game Over', True, (255, 0, 0))
-        retry_font = pygame.font.SysFont('Arial', 36)
-        retry_text = retry_font.render('Press SPACE to retry or ESC to quit', True, (255, 255, 255))
+        game_over_text = self.western_font_large.render('Game Over', True, (255, 0, 0))
+        retry_text = self.western_font_medium.render('Press SPACE to retry or ESC to quit', True, (255, 255, 255))
 
         text_rect = game_over_text.get_rect(center=(self.screen.get_width() // 2,
                                                     self.screen.get_height() // 2))
@@ -265,7 +320,7 @@ class Map:
 
     def game_won(self):
         victory_font = pygame.font.SysFont('Arial', 72)
-        victory_text = victory_font.render('Victory!', True, (255, 215, 0))
+        victory_text = self.western_font_large.render('Victory!', True, (255, 215, 0))
         text_rect = victory_text.get_rect(center=(self.screen.get_width() // 2,
                                                   self.screen.get_height() // 2))
 
@@ -290,7 +345,7 @@ class Map:
         coin_image_rect.topleft = (hud_rect.x + 20, hud_rect.y + 20)
         self.screen.blit(self.coin_image, coin_image_rect.topleft)
 
-        money_text = self.hud_font.render(f'{self.player.money}', True, (255, 255, 0))
+        money_text = self.western_font_small.render(f'{self.player.money}', True, (255, 255, 0))
         money_text_rect = money_text.get_rect(midleft=(coin_image_rect.right + 10, coin_image_rect.centery))
         self.screen.blit(money_text, money_text_rect)
 
@@ -299,7 +354,7 @@ class Map:
         ammo_spacing = 25  # Espacement entre les balles
 
         # Afficher le texte des munitions totales
-        total_ammo_text = self.hud_font.render(f"/{self.player.total_ammo}", True, (255, 255, 255))
+        total_ammo_text = self.western_font_small.render(f"/{self.player.total_ammo}", True, (255, 255, 255))
         total_ammo_rect = total_ammo_text.get_rect(midright=(screen_width - 20, 30))
         self.screen.blit(total_ammo_text, total_ammo_rect)
 
