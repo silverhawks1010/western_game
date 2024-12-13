@@ -50,7 +50,7 @@ class CharacterSelection:
         y = self.screen_height // 2 - 100
 
         # Noms des personnages
-        character_names = ["MacSonic", "MacPeach", "Macjoey"]
+        character_names = ["McSonic", "McPeach", "Mcjoey"]
 
         # Dessiner les personnages
         for i, character in enumerate(self.characters):
@@ -64,21 +64,41 @@ class CharacterSelection:
                                   char_rect.width + 20, char_rect.height + 20), 4)
 
             self.screen.blit(character, char_rect)
-
             # Afficher le nom du personnage
             name = self.font.render(character_names[i], True, self.WHITE)
             name_rect = name.get_rect(center=(x, y + 200))
             self.screen.blit(name, name_rect)
 
     def handle_event(self, event):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                # Se déplacer vers la gauche
-                self.selected_index = (self.selected_index - 1) % len(self.characters)
-            elif event.key == pygame.K_RIGHT:
-                # Se déplacer vers la droite
-                self.selected_index = (self.selected_index + 1) % len(self.characters)
-            elif event.key == pygame.K_RETURN:
-                # Retourner l'index du personnage sélectionné
-                return "character_selected", self.selected_index
+        if event.type == pygame.MOUSEMOTION:
+            # Récupérer la position de la souris
+            mouse_pos = event.pos
+            spacing = self.screen_width // 4
+            start_x = spacing
+            y = self.screen_height // 2 - 100
+
+            # Détecter sur quel personnage la souris est positionnée
+            for i, character in enumerate(self.characters):
+                x = start_x + i * spacing
+                char_rect = character.get_rect(center=(x, y))
+                if char_rect.collidepoint(mouse_pos):  # Si la souris est sur le personnage
+                    self.selected_index = i  # Mettre à jour l'index sélectionné
+                    break  # Sortir de la boucle après avoir trouvé un personnage
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            # Détecter un clic gauche de souris
+            if event.button == 1:  # 1 signifie clic gauche
+                mouse_pos = event.pos
+                spacing = self.screen_width // 4
+                start_x = spacing
+                y = self.screen_height // 2 - 100
+
+                # Vérifier quel personnage a été cliqué
+                for i, character in enumerate(self.characters):
+                    x = start_x + i * spacing
+                    char_rect = character.get_rect(center=(x, y))
+                    if char_rect.collidepoint(mouse_pos):  # Si la souris est sur le personnage
+                        self.selected_index = i  # Mettre à jour l'index sélectionné
+                        return "character_selected", self.selected_index  # Retourne l'index du personnage sélectionné
+
         return None
