@@ -20,6 +20,7 @@ class Crosshair:
         # Cercle extérieur
         pygame.draw.circle(screen, self.color, (x, y), self.size, self.thickness)
 
+
 class GunSprite:
     def __init__(self, screen_width, screen_height):
         # Charger l'image du sprite
@@ -32,9 +33,14 @@ class GunSprite:
         # Charger le son de tir
         self.shoot_sound = pygame.mixer.Sound('assets/sounds/combat_shoot.mp3')
 
-        # Créer les frames avec une plus grande taille
+        # Calculer le facteur d'échelle en fonction de la résolution de l'écran
+        # Utiliser la plus petite dimension pour s'assurer que ça rentre sur l'écran
+        reference_resolution = 1920  # Résolution de référence
+        scale_factor = min(screen_width, screen_height) / reference_resolution
+        scale_factor = max(0.7, min(scale_factor, 1.5))  # Limiter entre 0.7 et 1.5
+
+        # Créer les frames avec la taille adaptative
         self.frames = []
-        scale_factor = 1.5
         for i in range(4):
             frame = pygame.Surface((self.frame_width, self.frame_height), pygame.SRCALPHA)
             frame.blit(self.spritesheet, (0, 0), (i * self.frame_width, 0, self.frame_width, self.frame_height))
@@ -43,26 +49,29 @@ class GunSprite:
             frame = pygame.transform.scale(frame, (new_width, new_height))
             self.frames.append(frame)
 
-            # Position de base du pistolet (encore plus bas)
-            self.base_x = screen_width - self.frames[0].get_width() - 40
-            self.base_y = screen_height - self.frames[0].get_height() + 80  # Augmenté de 30 à 80
+        # Ajuster la position en fonction de la taille de l'écran
+        margin_x = int(40 * scale_factor)  # Marge proportionnelle
+        margin_y = int(80 * scale_factor)
 
-            # Position actuelle
-            self.x = self.base_x
-            self.y = self.base_y
+        self.base_x = screen_width - self.frames[0].get_width() - margin_x
+        self.base_y = screen_height - self.frames[0].get_height() + margin_y
 
-            # Paramètres de suivi de la souris augmentés
-            self.follow_strength = 0.4  # Augmenté de 0.3 à 0.4
-            self.max_offset_x = 70  # Augmenté de 40 à 70
-            self.max_offset_y = 50  # Augmenté de 30 à 50
+        # Position actuelle
+        self.x = self.base_x
+        self.y = self.base_y
 
-            # Le reste des attributs reste identique
-            self.current_frame = 0
-            self.is_animating = False
-            self.animation_speed = 0.1
-            self.animation_timer = 0
-            self.screen_width = screen_width
-            self.screen_height = screen_height
+        # Paramètres de suivi de la souris adaptés à la taille de l'écran
+        self.follow_strength = 0.4
+        self.max_offset_x = int(70 * scale_factor)  # Offset proportionnel
+        self.max_offset_y = int(50 * scale_factor)
+
+        # Animation
+        self.current_frame = 0
+        self.is_animating = False
+        self.animation_speed = 0.1
+        self.animation_timer = 0
+        self.screen_width = screen_width
+        self.screen_height = screen_height
 
     def update_position(self, mouse_pos):
         mouse_x, mouse_y = mouse_pos
