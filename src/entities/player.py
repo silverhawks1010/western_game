@@ -253,7 +253,7 @@ class Player(pygame.sprite.Sprite):
         self.idle = True
 
         if keys[pygame.K_LSHIFT]:
-            self.speed = 100
+            self.speed = 150
             self.animation_speed = 0.1
         else:
             self.speed = 50
