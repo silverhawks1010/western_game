@@ -1,176 +1,167 @@
 import pygame
 import math
-import random
-from src.core.settings import *
+from src.entities.npc import NPC
 
 
-class Bandit(pygame.sprite.Sprite):
-    def __init__(self, x, y, bandit_type='normal', groups=None):
-        super().__init__(groups) if groups else super().__init__()
-        # Type et stats de base selon le type de bandit
-        self.bandit_type = bandit_type
-        self.setup_bandit_stats()
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, position):
+        super().__init__()
 
-        # Position et dimensions
-        self.x = x
-        self.y = y
-        self.width = 64
-        self.height = 64
-        self.rect = pygame.Rect(x, y, self.width, self.height)
-        self.hitbox = self.rect.inflate(-10, -10)
+        # Chargement du sprite sheet du bandit
+        try:
+            self.sprite_sheet = pygame.image.load('assets/images/sprite/npc/bandit_du_desert.png').convert_alpha()
+        except Exception as e:
+            print(f"Erreur lors du chargement du sprite bandit: {e}")
+            self.sprite_sheet = pygame.Surface((32, 32))
+            self.sprite_sheet.fill((255, 0, 0))
 
-        # Variables de mouvement
-        self.direction = pygame.math.Vector2()
-        self.facing = 'left'
-        self.moving = False
-        self.can_move = True
-        self.speed = ENEMY_SPEEDS[bandit_type]
+        # Configuration de l'ennemi
+        self.speed = 40
+        self.health = 2
+        self.damage_cooldown = 2000
+        self.last_damage_time = 0
+        self.detection_range = 200
+        self.is_chasing = False
+
+        # Système de recul
+        self.knockback_distance = 200  # Distance de recul
+        self.knockback_duration = 0.5  # Durée du recul en secondes
+        self.is_knocked_back = False
+        self.knockback_timer = 0
+        self.knockback_direction = pygame.math.Vector2(0, 0)
 
         # Animation
-        self.frame_index = 0
-        self.animation_speed = 0.15
-        self.load_animations()
-        self.image = self.animations['idle_left'][0]
+        self.animation_frame = 0
+        self.animation_timer = 0
+        self.animation_speed = 0.2
+        self.frames = self.load_frames()
+        self.image = self.frames[0]
+        self.rect = self.image.get_rect(topleft=position)
+        self.hitbox = self.rect.inflate(-20, -20)
 
-        # Combat
-        self.can_shoot = True
-        self.shoot_cooldown = random.randint(1000, 2000)  # Différent pour chaque bandit
-        self.last_shot = pygame.time.get_ticks()
-        self.aggro_range = 300  # Distance d'activation du bandit
+        # Système de clignotement
+        self.is_flashing = False
+        self.flash_duration = 0.2  # Durée du flash en secondes
+        self.flash_timer = 0
+        self.flash_interval = 0.05  # Durée entre chaque alternance de visibilité
+        self.flash_visible = True
+        self.original_frames = None
 
-    def setup_bandit_stats(self):
-        """Configure les stats selon le type de bandit"""
-        self.stats = {
-            'weak': {
-                'health': ENEMY_HEALTH['weak'],
-                'damage': 10,
-                'speed': ENEMY_SPEEDS['slow'],
-                'reward': 50
-            },
-            'normal': {
-                'health': ENEMY_HEALTH['normal'],
-                'damage': 20,
-                'speed': ENEMY_SPEEDS['normal'],
-                'reward': 100
-            },
-            'strong': {
-                'health': ENEMY_HEALTH['strong'],
-                'damage': 30,
-                'speed': ENEMY_SPEEDS['fast'],
-                'reward': 200
-            }
-        }
+    def start_flash(self):
+        self.is_flashing = True
+        self.flash_timer = self.flash_duration
+        self.flash_visible = True
+        # Sauvegarder les frames originales
+        self.original_frames = self.frames.copy()
+        # Créer les frames blanches pour le flash
+        self.white_frames = []
+        for frame in self.frames:
+            white_frame = frame.copy()
+            white_surface = pygame.Surface(frame.get_size(), pygame.SRCALPHA)
+            white_surface.fill((255, 255, 255, 150))  # Blanc semi-transparent
+            white_frame.blit(white_surface, (0, 0))
+            self.white_frames.append(white_frame)
 
-        stats = self.stats[self.bandit_type]
-        self.health = stats['health']
-        self.max_health = stats['health']
-        self.damage = stats['damage']
-        self.speed = stats['speed']
-        self.reward = stats['reward']
+    def update_flash(self, delta_time):
+        if self.is_flashing:
+            self.flash_timer -= delta_time
 
-    def load_animations(self):
-        """Charge les animations du bandit"""
-        self.animations = {
-            'idle_right': [],
-            'idle_left': [],
-            'walk_right': [],
-            'walk_left': [],
-            'shoot_right': [],
-            'shoot_left': [],
-            'die': []
-        }
-
-        # Créer une surface temporaire pour le développement
-        # À remplacer par les vrais sprites plus tard
-        color = (139, 0, 0) if self.bandit_type == 'strong' else \
-            (165, 42, 42) if self.bandit_type == 'normal' else \
-                (188, 39, 50)  # weak
-
-        temp_surface = pygame.Surface((self.width, self.height))
-        temp_surface.fill(color)
-
-        # Ajouter le sprite temporaire à toutes les animations
-        for key in self.animations:
-            if 'left' in key:
-                self.animations[key].append(pygame.transform.flip(temp_surface, True, False))
+            # Alterner entre visible et invisible
+            if self.flash_timer % self.flash_interval < self.flash_interval / 2:
+                self.frames = self.white_frames
             else:
-                self.animations[key].append(temp_surface.copy())
+                self.frames = self.original_frames
 
-    def move_towards_player(self, player_pos, dt):
-        """Déplace le bandit vers le joueur"""
-        if not self.can_move:
-            return
+            # Mettre à jour l'image actuelle
+            self.image = self.frames[self.animation_frame]
 
-        # Calculer la direction vers le joueur
-        target_x, target_y = player_pos
-        dx = target_x - self.rect.centerx
-        dy = target_y - self.rect.centery
-        dist = math.sqrt(dx * dx + dy * dy)
+            # Arrêter le flash quand le timer est écoulé
+            if self.flash_timer <= 0:
+                self.is_flashing = False
+                self.frames = self.original_frames
+                self.image = self.frames[self.animation_frame]
 
-        # Mettre à jour la direction si le joueur est à portée
-        if dist <= self.aggro_range:
-            self.direction.x = dx / dist if dist > 0 else 0
-            self.direction.y = dy / dist if dist > 0 else 0
-            self.moving = True
-            self.facing = 'right' if dx > 0 else 'left'
-        else:
-            self.direction.x = 0
-            self.direction.y = 0
-            self.moving = False
+    def load_frames(self):
+        frames = []
+        frame_width = self.sprite_sheet.get_width() // 6
+        frame_height = self.sprite_sheet.get_height()
 
-        # Appliquer le mouvement
-        if self.moving:
-            self.hitbox.x += self.direction.x * self.speed * dt
-            self.hitbox.y += self.direction.y * self.speed * dt
+        for i in range(6):
+            frame = self.sprite_sheet.subsurface(
+                pygame.Rect(i * frame_width, 0, frame_width, frame_height))
+            frames.append(frame)
+        return frames
+
+    def apply_knockback(self, player_pos):
+        # Calculer la direction de recul (direction opposée au joueur)
+        dx = self.hitbox.centerx - player_pos[0]
+        dy = self.hitbox.centery - player_pos[1]
+
+        # Normaliser le vecteur
+        length = math.sqrt(dx * dx + dy * dy)
+        if length != 0:
+            self.knockback_direction.x = dx / length
+            self.knockback_direction.y = dy / length
+
+        self.is_knocked_back = True
+        self.knockback_timer = self.knockback_duration
+
+    def update(self, delta_time, player):
+        self.update_flash(delta_time)
+        # Mise à jour de l'animation
+        self.animation_timer += delta_time
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            self.animation_frame = (self.animation_frame + 1) % len(self.frames)
+            self.image = self.frames[self.animation_frame]
+
+        # Gérer le recul
+        if self.is_knocked_back:
+            self.knockback_timer -= delta_time
+            if self.knockback_timer <= 0:
+                self.is_knocked_back = False
+            else:
+                # Appliquer le mouvement de recul
+                knockback_speed = self.knockback_distance * (self.knockback_timer / self.knockback_duration)
+                self.hitbox.x += self.knockback_direction.x * knockback_speed * delta_time
+                self.hitbox.y += self.knockback_direction.y * knockback_speed * delta_time
+                self.rect.center = self.hitbox.center
+                return None
+
+        # Comportement normal si pas en recul
+        distance_to_player = math.sqrt(
+            (player.hitbox.centerx - self.hitbox.centerx) ** 2 +
+            (player.hitbox.centery - self.hitbox.centery) ** 2
+        )
+
+        if distance_to_player <= self.detection_range and not self.is_knocked_back:
+            self.is_chasing = True
+
+            # Calculer la direction vers le joueur
+            dx = player.hitbox.centerx - self.hitbox.centerx
+            dy = player.hitbox.centery - self.hitbox.centery
+
+            # Normaliser le vecteur de direction
+            length = math.sqrt(dx ** 2 + dy ** 2)
+            if length != 0:
+                dx = dx / length
+                dy = dy / length
+
+            # Déplacer l'ennemi
+            self.hitbox.x += dx * self.speed * delta_time
+            self.hitbox.y += dy * self.speed * delta_time
             self.rect.center = self.hitbox.center
 
-    def animate(self, dt):
-        """Gère l'animation du bandit"""
-        animation_type = 'walk_' if self.moving else 'idle_'
-        animation_type += self.facing
+            # Vérifier les collisions et gérer les dégâts
+            if self.hitbox.colliderect(player.hitbox):
+                current_time = pygame.time.get_ticks()
+                if current_time - self.last_damage_time >= self.damage_cooldown:
+                    player.current_lives -= 1
+                    self.last_damage_time = current_time
+                    # Appliquer le recul après avoir infligé des dégâts
+                    self.apply_knockback((player.hitbox.centerx, player.hitbox.centery))
 
-        self.frame_index += self.animation_speed * dt
-        if self.frame_index >= len(self.animations[animation_type]):
-            self.frame_index = 0
+                    if player.current_lives <= 0:
+                        return "game_over"
 
-        self.image = self.animations[animation_type][int(self.frame_index)]
-
-    def take_damage(self, amount):
-        """Gère les dégâts reçus"""
-        self.health -= amount
-        if self.health <= 0:
-            return True  # Indique que le bandit est mort
-        return False
-
-    def try_shoot(self):
-        """Tente de tirer si le cooldown est terminé"""
-        current_time = pygame.time.get_ticks()
-        if self.can_shoot and current_time - self.last_shot >= self.shoot_cooldown:
-            self.last_shot = current_time
-            return True
-        return False
-
-    def draw_health_bar(self, surface):
-        """Dessine la barre de vie du bandit"""
-        bar_width = self.width
-        bar_height = 6
-        bar_position = (self.rect.centerx - bar_width / 2, self.rect.top - 10)
-
-        # Fond de la barre
-        pygame.draw.rect(surface, RED,
-                         (bar_position[0], bar_position[1], bar_width, bar_height))
-
-        # Barre de vie actuelle
-        health_width = (self.health / self.max_health) * bar_width
-        pygame.draw.rect(surface, GREEN,
-                         (bar_position[0], bar_position[1], health_width, bar_height))
-
-    def update(self, player_pos, dt):
-        """Met à jour l'état du bandit"""
-        self.move_towards_player(player_pos, dt)
-        self.animate(dt)
-
-    def draw(self, surface):
-        """Dessine le bandit et sa barre de vie"""
-        surface.blit(self.image, self.rect)
-        self.draw_health_bar(surface)
+        return None

@@ -175,11 +175,10 @@ class Player(pygame.sprite.Sprite):
                 self.total_ammo -= self.ammo_in_magazine
                 self.is_reloading = False
             else:
-                return  # Ne pas tirer pendant le rechargement
+                return
 
         # Vérifier s'il reste des munitions
         if self.ammo_in_magazine <= 0:
-            # Recharger si on a encore des munitions totales
             if self.total_ammo > 0 and not self.is_reloading:
                 self.is_reloading = True
                 self.reload_start = current_time
@@ -188,15 +187,13 @@ class Player(pygame.sprite.Sprite):
             return
 
         if current_time - self.last_shot > self.shot_cooldown:
-            screen = pygame.display.get_surface()
-            screen_center = (screen.get_width() // 2, screen.get_height() // 2)
-
             if self.bullet_sprites[self.direction]:
                 if self.shot_sound:
                     self.shot_sound.play()
 
+                # Créer la balle à la position du joueur plutôt qu'au centre de l'écran
                 offset = 30
-                spawn_pos = list(screen_center)
+                spawn_pos = list(self.position)
 
                 if self.direction == 'up':
                     spawn_pos[1] -= offset
@@ -212,7 +209,6 @@ class Player(pygame.sprite.Sprite):
                 self.last_shot = current_time
                 self.ammo_in_magazine -= 1
 
-                # Recharger automatiquement si le chargeur est vide
                 if self.ammo_in_magazine == 0 and self.total_ammo > 0:
                     self.is_reloading = True
                     self.reload_start = current_time
@@ -256,7 +252,7 @@ class Player(pygame.sprite.Sprite):
         self.idle = True
 
         if keys[pygame.K_LSHIFT]:
-            self.speed = 1000
+            self.speed = 100
             self.animation_speed = 0.1
         else:
             self.speed = 50
@@ -299,7 +295,8 @@ class Player(pygame.sprite.Sprite):
             self.walk_index = (self.walk_index + 1) % len(self.walk_images[self.direction])
             self.image = self.walk_images[self.direction][self.walk_index]
 
-    def update_bullets(self, delta_time, npcs):
+    # Dans la classe Player, simplifions update_bullets
+    def update_bullets(self, delta_time, npcs=None):
         self.bullets.update(delta_time)
         for bullet in list(self.bullets):
             # Vérifier si la balle sort de l'écran

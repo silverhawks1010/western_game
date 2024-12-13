@@ -7,6 +7,7 @@ import pyscroll
 from src.entities.player import Player
 from src.entities.npc import NPC
 from src.scenes.combat import Combat
+from src.entities.enemy import Enemy
 
 class Map:
     def __init__(self, screen, selected_character):
@@ -58,6 +59,21 @@ class Map:
             2: {"score": 900, "accuracy": 0.8},  # Deuxième combat
             3: {"score": 1000, "accuracy": 0.95}  # Troisième combat
         }
+        self.enemies = pygame.sprite.Group()
+        self.spawn_enemies()
+
+    def spawn_enemies(self):
+        map_center_x = self.map_layer.map_rect.width // 2
+        map_center_y = self.map_layer.map_rect.height // 2
+        spawn_radius = 500
+
+        for _ in range(3):
+            npc_x = map_center_x + random.randint(-spawn_radius, spawn_radius)
+            npc_y = map_center_y + random.randint(-spawn_radius, spawn_radius)
+
+            enemy = Enemy(position=(npc_x, npc_y))
+            self.enemies.add(enemy)
+            self.group.add(enemy)
 
     def draw_defeated_npc_tracker(self):
         # Position for the first cross (bottom right corner)
@@ -140,9 +156,38 @@ class Map:
     def update(self):
         delta_time = self.clock.tick(60) / 1000.0
 
-        # Player and NPC updates
         self.player.update(delta_time, self.npcs)
         self.npcs.update(delta_time)
+
+        # Update enemies
+        for enemy in self.enemies:
+            result = enemy.update(delta_time, self.player)
+            if result == "game_over":
+                self.game_over()
+                return  # Sortir de la méthode update si game over
+
+            # Handle bullet collisions with enemies
+            for bullet in list(self.player.bullets):
+                bullet.update(delta_time)
+
+                # Vérifier si la balle sort de l'écran
+                if not self.screen.get_rect().colliderect(bullet.rect):
+                    bullet.kill()
+                    continue
+
+                # Vérifier les collisions avec les ennemis
+                for enemy in list(self.enemies):
+                    if bullet.hitbox.colliderect(enemy.hitbox):  # Utiliser les hitbox pour la collision
+                        print("Enemy hit by bullet!")  # Debug
+                        bullet.kill()
+                        enemy.health -= 1
+                        enemy.start_flash()
+
+                        if enemy.health <= 0:
+                            self.enemies.remove(enemy)
+                            self.group.remove(enemy)
+                            self.player.points += 1
+                        break  # Sortir après la première collision
 
         # Handle interactions and collisions
         self.handle_interactions()
